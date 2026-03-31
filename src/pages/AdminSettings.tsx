@@ -393,7 +393,7 @@ export default function AdminSettings() {
           <div className="rounded-2xl bg-white p-6 shadow-sm border border-neutral-100 dark:bg-neutral-900 dark:border-neutral-800">
             <div className="flex items-center space-x-4">
               <button
-                onClick={() => setTheme("light")}
+                onClick={() => handleThemeChange("light")}
                 className={`flex flex-1 items-center justify-center space-x-2 rounded-xl border-2 p-4 transition-all ${
                   theme === "light"
                     ? "border-emerald-600 bg-emerald-50 text-emerald-700 dark:bg-emerald-900/20 dark:text-emerald-400"
@@ -404,7 +404,7 @@ export default function AdminSettings() {
                 <span className="font-bold">Tema Claro</span>
               </button>
               <button
-                onClick={() => setTheme("dark")}
+                onClick={() => handleThemeChange("dark")}
                 className={`flex flex-1 items-center justify-center space-x-2 rounded-xl border-2 p-4 transition-all ${
                   theme === "dark"
                     ? "border-emerald-600 bg-emerald-50 text-emerald-700 dark:bg-emerald-900/20 dark:text-emerald-400"

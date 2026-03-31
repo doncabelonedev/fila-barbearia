@@ -72,8 +72,13 @@ export function useShopSettingsHook() {
       )
       .subscribe();
 
+    const pollInterval = setInterval(() => {
+      fetchSettings();
+    }, 10000); // Poll settings less frequently (10s)
+
     return () => {
       supabase.removeChannel(channel);
+      clearInterval(pollInterval);
     };
   }, []);
 
@@ -108,6 +113,7 @@ export function useShopSettings() {
       logoUrl: null as string | null,
       webhookUrl: null as string | null,
       trackingUrlBase: null as string | null,
+      setTheme: () => {},
     };
   }
   return context;

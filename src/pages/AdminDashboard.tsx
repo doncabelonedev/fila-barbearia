@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase, QueueItem } from "../lib/supabase";
 import { useAverageServiceTime, useQueueCount } from "../hooks/useQueue";
@@ -42,8 +42,16 @@ export default function AdminDashboard() {
   const [pin, setPin] = useState("");
   const [queue, setQueue] = useState<QueueItem[]>([]);
   const [localQueue, setLocalQueue] = useState<QueueItem[]>([]);
-  const [isReordering, setIsReordering] = useState(false);
+  const [isReordering, setIsReorderingState] = useState(false);
+  const isReorderingRef = useRef(false);
+
+  const setIsReordering = (value: boolean) => {
+    isReorderingRef.current = value;
+    setIsReorderingState(value);
+  };
   const [loading, setLoading] = useState(true);
+  const [isToggling, setIsToggling] = useState(false);
+  const [processingId, setProcessingId] = useState<string | null>(null);
   const [showAddModal, setShowAddModal] = useState(false);
   const [itemToRemove, setItemToRemove] = useState<string | null>(null);
   const [manualStatus, setManualStatus] = useState<"auto" | "open" | "closed">(
@@ -54,36 +62,8 @@ export default function AdminDashboard() {
 
   const adminPin = import.meta.env.VITE_ADMIN_PIN || "1234";
 
-  useEffect(() => {
-    const auth = sessionStorage.getItem("barber_admin_auth");
-    if (auth === "true") {
-      setIsAuthenticated(true);
-      fetchQueue();
-      fetchSettings();
-    } else {
-      setLoading(false);
-    }
-
-    const channel = supabase
-      .channel("admin_queue_updates")
-      .on("postgres_changes" as any, { event: "*", table: "queue" }, () => {
-        fetchQueue();
-      })
-      .on(
-        "postgres_changes" as any,
-        { event: "*", table: "shop_settings" },
-        () => {
-          fetchSettings();
-        },
-      )
-      .subscribe();
-
-    return () => {
-      supabase.removeChannel(channel);
-    };
-  }, []);
-
-  async function fetchQueue() {
+  const fetchQueue = useCallback(async () => {
+    console.log("Fetching queue...");
     const { data, error } = await supabase
       .from("queue")
       .select("*, customer:customer_id(*)")
@@ -91,26 +71,30 @@ export default function AdminDashboard() {
       .order("position", { ascending: true });
 
     if (error) {
+      console.error("Error fetching queue:", error);
       toast.error("Falha ao buscar a fila");
     } else {
+      console.log("Queue fetched successfully, items:", data?.length);
       setQueue(data || []);
       // Only update local queue if we are not currently dragging/reordering
       setLocalQueue((prev) => {
-        if (isReordering) return prev;
+        if (isReorderingRef.current) return prev;
         return data || [];
       });
     }
     setLoading(false);
-  }
+  }, []);
 
-  async function fetchSettings() {
+  const fetchSettings = useCallback(async () => {
     const { data, error } = await supabase
       .from("shop_settings")
       .select("*")
       .limit(1)
       .maybeSingle();
     if (data) {
-      setManualStatus(data.manual_status);
+      setManualStatus((prev) =>
+        prev !== data.manual_status ? data.manual_status : prev,
+      );
     } else if (!error) {
       // Initialize settings if not exists
       const { data: newData } = await supabase
@@ -120,7 +104,58 @@ export default function AdminDashboard() {
         .single();
       if (newData) setManualStatus(newData.manual_status);
     }
-  }
+  }, []);
+
+  useEffect(() => {
+    // Only connect to real-time if authenticated
+    if (isAuthenticated) {
+      fetchQueue();
+      fetchSettings();
+
+      const channel = supabase
+        .channel("admin_queue_updates")
+        .on(
+          "postgres_changes" as any,
+          { event: "*", schema: "public", table: "queue" },
+          (payload: any) => {
+            console.log("Real-time queue update received:", payload);
+            fetchQueue();
+          },
+        )
+        .on(
+          "postgres_changes" as any,
+          { event: "*", schema: "public", table: "shop_settings" },
+          (payload: any) => {
+            console.log("Real-time settings update received:", payload);
+            fetchSettings();
+          },
+        )
+        .subscribe((status) => {
+          console.log("Admin channel status:", status);
+        });
+
+      // Polling fallback to ensure updates even if real-time fails
+      const pollInterval = setInterval(() => {
+        fetchQueue();
+        fetchSettings();
+      }, 5000);
+
+      return () => {
+        console.log("Removing admin channel and polling");
+        supabase.removeChannel(channel);
+        clearInterval(pollInterval);
+      };
+    }
+  }, [isAuthenticated, fetchQueue, fetchSettings]);
+
+  useEffect(() => {
+    const auth = sessionStorage.getItem("barber_admin_auth");
+    if (auth === "true") {
+      setIsAuthenticated(true);
+    } else {
+      setLoading(false);
+    }
+  }, []);
 
   const handleToggleManualStatus = async () => {
     const nextStatus: Record<
@@ -222,7 +257,6 @@ export default function AdminDashboard() {
     if (pin === adminPin) {
       setIsAuthenticated(true);
       sessionStorage.setItem("barber_admin_auth", "true");
-      fetchQueue();
     } else {
       toast.error("PIN Inválido");
       setPin("");
@@ -230,6 +264,8 @@ export default function AdminDashboard() {
   };
 
   const handleStartService = async (item: QueueItem) => {
+    if (processingId) return;
+    setProcessingId(item.id);
     try {
       // 1. Mark current serving as completed if any
       const servingItem = queue.find((i) => i.status === "serving");
@@ -264,10 +300,14 @@ export default function AdminDashboard() {
     } catch (error) {
       console.error(error);
       toast.error("Falha ao iniciar atendimento");
+    } finally {
+      setProcessingId(null);
     }
   };
 
   const handleCompleteService = async (item: QueueItem) => {
+    if (processingId) return;
+    setProcessingId(item.id);
     try {
       const endTime = new Date();
       const startTime = new Date(item.service_start!);
@@ -294,10 +334,14 @@ export default function AdminDashboard() {
     } catch (error) {
       console.error(error);
       toast.error("Falha ao finalizar atendimento");
+    } finally {
+      setProcessingId(null);
     }
   };
 
   const handleRemove = async (id: string) => {
+    if (processingId) return;
+    setProcessingId(id);
     try {
       const { error } = await supabase
         .from("queue")
@@ -310,16 +354,20 @@ export default function AdminDashboard() {
     } catch (error) {
       console.error(error);
       toast.error("Falha ao remover cliente");
+    } finally {
+      setProcessingId(null);
     }
   };
 
   const handleMove = async (item: QueueItem, direction: "up" | "down") => {
+    if (processingId) return;
     const index = queue.findIndex((i) => i.id === item.id);
     if (direction === "up" && index === 0) return;
     if (direction === "down" && index === queue.length - 1) return;
 
     const otherItem = direction === "up" ? queue[index - 1] : queue[index + 1];
 
+    setProcessingId(item.id);
     try {
       await supabase
         .from("queue")
@@ -333,6 +381,8 @@ export default function AdminDashboard() {
       await fetchQueue();
     } catch (error) {
       toast.error("Falha ao mover posição");
+    } finally {
+      setProcessingId(null);
     }
   };
 
@@ -668,7 +718,8 @@ export default function AdminDashboard() {
                                 {item.status === "serving" && (
                                   <button
                                     onClick={() => handleCompleteService(item)}
-                                    className="flex h-10 w-10 items-center justify-center rounded-xl bg-emerald-600 text-white shadow-sm hover:bg-emerald-700 transition-all dark:shadow-none"
+                                    disabled={!!processingId}
+                                    className="flex h-10 w-10 items-center justify-center rounded-xl bg-emerald-600 text-white shadow-sm hover:bg-emerald-700 transition-all disabled:opacity-50 dark:shadow-none"
                                     title="Finalizar Atendimento"
                                   >
                                     <Check className="h-6 w-6" />
@@ -678,7 +729,8 @@ export default function AdminDashboard() {
                                   <>
                                     <button
                                       onClick={() => handleStartService(item)}
-                                      className="flex h-10 w-10 items-center justify-center rounded-xl bg-emerald-600 text-white shadow-sm hover:bg-emerald-700 transition-all dark:shadow-none"
+                                      disabled={!!processingId}
+                                      className="flex h-10 w-10 items-center justify-center rounded-xl bg-emerald-600 text-white shadow-sm hover:bg-emerald-700 transition-all disabled:opacity-50 dark:shadow-none"
                                       title="Start Service"
                                     >
                                       <Play className="h-5 w-5 fill-current" />
@@ -687,7 +739,8 @@ export default function AdminDashboard() {
                                 )}
                                 <button
                                   onClick={() => setItemToRemove(item.id)}
-                                  className="flex h-10 w-10 items-center justify-center rounded-xl bg-red-50 text-red-600 hover:bg-red-100 transition-all dark:bg-red-900/20 dark:text-red-500 dark:hover:bg-red-900/40"
+                                  disabled={!!processingId}
+                                  className="flex h-10 w-10 items-center justify-center rounded-xl bg-red-50 text-red-600 hover:bg-red-100 transition-all disabled:opacity-50 dark:bg-red-900/20 dark:text-red-500 dark:hover:bg-red-900/40"
                                   title="Remover"
                                 >
                                   <Trash2 className="h-5 w-5" />
@@ -769,7 +822,8 @@ export default function AdminDashboard() {
                 </button>
                 <button
                   onClick={() => handleRemove(itemToRemove)}
-                  className="h-12 flex-1 rounded-xl bg-red-600 font-bold text-white shadow-lg shadow-red-100 hover:bg-red-700 dark:shadow-none"
+                  disabled={!!processingId}
+                  className="h-12 flex-1 rounded-xl bg-red-600 font-bold text-white shadow-lg shadow-red-100 hover:bg-red-700 disabled:opacity-50 dark:shadow-none"
                 >
                   Remover
                 </button>

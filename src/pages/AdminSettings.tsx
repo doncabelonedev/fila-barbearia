@@ -1,27 +1,24 @@
-import React, { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
-import { supabase, Schedule, ScheduleException } from "../lib/supabase";
 import {
   ArrowLeft,
-  Save,
-  Plus,
-  Trash2,
   Calendar,
   Clock,
   Loader2,
-  CheckCircle2,
   MessageCircle,
   Moon,
-  Sun,
+  Plus,
+  Save,
   Store,
-  Image as ImageIcon,
+  Sun,
+  Trash2,
   Upload,
   Webhook,
 } from "lucide-react";
-import { webhookService } from "../services/webhookService";
-import { motion } from "motion/react";
+import React, { useEffect, useState } from "react";
 import toast from "react-hot-toast";
+import { useNavigate } from "react-router-dom";
 import { useShopSettings } from "../hooks/useShopSettings";
+import { Schedule, ScheduleException, supabase } from "../lib/supabase";
+import { webhookService } from "../services/webhookService";
 
 const WEEKDAYS = [
   "Domingo",

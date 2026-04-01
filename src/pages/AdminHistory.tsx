@@ -1,29 +1,27 @@
-import React, { useState, useEffect, useMemo } from "react";
-import { useNavigate } from "react-router-dom";
-import { supabase } from "../lib/supabase";
 import {
-  ArrowLeft,
-  Search,
-  Calendar,
-  Filter,
-  Download,
-  History,
-  CheckCircle2,
-  XCircle,
-  Clock,
-  Users,
-  Loader2,
-} from "lucide-react";
-import { motion } from "motion/react";
-import toast from "react-hot-toast";
-import {
-  format,
-  parseISO,
-  isWithinInterval,
-  startOfDay,
   endOfDay,
+  format,
+  isWithinInterval,
+  parseISO,
+  startOfDay,
 } from "date-fns";
 import { ptBR } from "date-fns/locale";
+import {
+  ArrowLeft,
+  Calendar,
+  CheckCircle2,
+  Clock,
+  Filter,
+  History,
+  Loader2,
+  Search,
+  Users,
+  XCircle,
+} from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
+import toast from "react-hot-toast";
+import { useNavigate } from "react-router-dom";
+import { supabase } from "../lib/supabase";
 
 interface HistoryItem {
   id: string;

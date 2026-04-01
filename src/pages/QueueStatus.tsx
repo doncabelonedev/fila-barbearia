@@ -1,18 +1,18 @@
-import { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
-import { supabase, QueueItem } from "../lib/supabase";
-import { useAverageServiceTime } from "../hooks/useQueue";
 import {
-  Clock,
-  Users,
-  LogOut,
-  Loader2,
   AlertTriangle,
-  Scissors,
+  Clock,
+  Loader2,
+  LogOut,
   MessageCircle,
+  Scissors,
+  Users,
 } from "lucide-react";
-import { motion, AnimatePresence } from "motion/react";
+import { AnimatePresence, motion } from "motion/react";
+import { useEffect, useState } from "react";
 import toast from "react-hot-toast";
+import { useNavigate } from "react-router-dom";
+import { useAverageServiceTime } from "../hooks/useQueue";
+import { QueueItem, supabase } from "../lib/supabase";
 
 import { useShopSettings } from "../hooks/useShopSettings";
 
@@ -222,9 +222,11 @@ export default function QueueStatus() {
                 {queueItem?.code}
               </h2>
             </div>
-
+            {}
             <div className="p-8 space-y-8">
-              <div className="grid grid-cols-2 gap-4">
+              <div
+                className={`grid ${waitTime > 0 ? "grid-cols-2" : "grid-cols-1"} gap-4`}
+              >
                 <div className="rounded-2xl bg-neutral-50 p-4 text-center border border-neutral-100 dark:bg-neutral-800 dark:border-neutral-700">
                   <Users className="mx-auto mb-2 h-6 w-6 text-emerald-600 dark:text-emerald-500" />
                   <p className="text-xs font-semibold uppercase text-neutral-400 dark:text-neutral-500">
@@ -234,15 +236,17 @@ export default function QueueStatus() {
                     {position}
                   </p>
                 </div>
-                <div className="rounded-2xl bg-neutral-50 p-4 text-center border border-neutral-100 dark:bg-neutral-800 dark:border-neutral-700">
-                  <Clock className="mx-auto mb-2 h-6 w-6 text-emerald-600 dark:text-emerald-500" />
-                  <p className="text-xs font-semibold uppercase text-neutral-400 dark:text-neutral-500">
-                    Tempo de Espera
-                  </p>
-                  <p className="text-2xl font-bold text-neutral-900 dark:text-white">
-                    {waitTimeStr}
-                  </p>
-                </div>
+                {waitTime > 0 && (
+                  <div className="rounded-2xl bg-neutral-50 p-4 text-center border border-neutral-100 dark:bg-neutral-800 dark:border-neutral-700">
+                    <Clock className="mx-auto mb-2 h-6 w-6 text-emerald-600 dark:text-emerald-500" />
+                    <p className="text-xs font-semibold uppercase text-neutral-400 dark:text-neutral-500">
+                      {waitTime > 0 ? "Tempo de Espera" : "A qualquer momento"}
+                    </p>
+                    <p className="text-2xl font-bold text-neutral-900 dark:text-white">
+                      {waitTimeStr}
+                    </p>
+                  </div>
+                )}
               </div>
 
               <AnimatePresence>
@@ -255,10 +259,11 @@ export default function QueueStatus() {
                   >
                     <AlertTriangle className="h-6 w-6 shrink-0 text-amber-600 dark:text-amber-500" />
                     <div>
-                      <p className="font-bold">Sua vez está chegando!</p>
+                      <p className="font-bold text-amber-50">
+                        Você é o proximo!
+                      </p>
                       <p className="text-sm opacity-90">
-                        Por favor, dirija-se à barbearia agora para não perder
-                        sua vez.
+                        Aguarde, o barbeiro irá chamá-lo em instantes.
                       </p>
                     </div>
                   </motion.div>
@@ -282,9 +287,19 @@ export default function QueueStatus() {
                   <span className="text-neutral-500 dark:text-neutral-400">
                     Status
                   </span>
-                  <span className="inline-flex items-center rounded-full bg-emerald-100 px-2.5 py-0.5 text-xs font-medium text-emerald-800 capitalize dark:bg-emerald-900/30 dark:text-emerald-400">
+
+                  <span
+                    className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium capitalize
+                                ${
+                                  waitTime === 0
+                                    ? "bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400"
+                                    : "bg-emerald-100 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-400"
+                                }`}
+                  >
                     {queueItem?.status === "waiting"
-                      ? "Aguardando"
+                      ? waitTime === 0
+                        ? "Chamado em breve"
+                        : "Aguardando"
                       : queueItem?.status === "serving"
                         ? "Em atendimento"
                         : queueItem?.status}

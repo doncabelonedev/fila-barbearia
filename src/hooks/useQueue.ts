@@ -163,7 +163,10 @@ export function useAverageServiceTime() {
         .limit(10);
 
       if (data && data.length > 0) {
-        const sum = data.reduce((acc, curr) => acc + curr.duration_minutes, 0);
+        const sum = data.reduce(
+          (acc: any, curr: any) => acc + curr.duration_minutes,
+          0,
+        );
         setAvgTime(Math.round(sum / data.length));
       }
     }

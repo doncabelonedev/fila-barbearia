@@ -14,6 +14,7 @@ import { useAverageServiceTime, useQueueCount } from "../hooks/useQueue";
 import { supabase } from "../lib/supabase";
 
 import { useShopSettings } from "../hooks/useShopSettings";
+import { webhookService } from "../services/webhookService";
 
 export default function Join() {
   const location = useLocation();
@@ -186,9 +187,18 @@ export default function Join() {
       localStorage.setItem("barber_queue_code", queueEntry.code);
       localStorage.setItem("barber_customer_phone", phone);
 
-      // // Send webhooks
-      // const peopleAhead = queueCount; // queueCount is the number of people BEFORE this user joined
-      // webhookService.sendWebhook('JOINED', queueEntry, nextPosition, peopleAhead, avgServiceTime, shopName, webhookUrl, trackingUrlBase);
+      // Send webhooks
+      const peopleAhead = queueCount; // queueCount is the number of people BEFORE this user joined
+      webhookService.sendWebhook(
+        "JOINED",
+        queueEntry,
+        nextPosition,
+        peopleAhead,
+        avgServiceTime,
+        shopName,
+        webhookUrl,
+        trackingUrlBase,
+      );
 
       toast.success("Entrou na fila com sucesso!");
       navigate("/queue");

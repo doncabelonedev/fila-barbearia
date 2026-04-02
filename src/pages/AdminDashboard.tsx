@@ -192,29 +192,29 @@ export default function AdminDashboard() {
           const peopleAhead = index;
 
           let sent = false;
-          // if (peopleAhead === 0) {
-          //   sent = await webhookService.sendWebhook(
-          //     "NEXT",
-          //     item,
-          //     position,
-          //     peopleAhead,
-          //     avgServiceTime,
-          //     shopName,
-          //     webhookUrl,
-          //     trackingUrlBase,
-          //   );
-          // } else if (peopleAhead === 2) {
-          //   sent = await webhookService.sendWebhook(
-          //     "NEAR",
-          //     item,
-          //     position,
-          //     peopleAhead,
-          //     avgServiceTime,
-          //     shopName,
-          //     webhookUrl,
-          //     trackingUrlBase,
-          //   );
-          // }
+          if (peopleAhead === 0) {
+            sent = await webhookService.sendWebhook(
+              "NEXT",
+              item,
+              position,
+              peopleAhead,
+              avgServiceTime,
+              shopName,
+              webhookUrl,
+              trackingUrlBase,
+            );
+          } else if (peopleAhead === 2) {
+            sent = await webhookService.sendWebhook(
+              "NEAR",
+              item,
+              position,
+              peopleAhead,
+              avgServiceTime,
+              shopName,
+              webhookUrl,
+              trackingUrlBase,
+            );
+          }
 
           if (sent) {
             await new Promise((resolve) => setTimeout(resolve, 500));

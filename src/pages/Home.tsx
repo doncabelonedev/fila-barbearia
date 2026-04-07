@@ -1,8 +1,5 @@
 import {
-  AlertTriangle,
-  ArrowDown,
   ArrowRight,
-  CheckCircle2,
   Clock,
   Loader2,
   Phone,
@@ -11,7 +8,7 @@ import {
   Users,
   X,
 } from "lucide-react";
-import { AnimatePresence, motion } from "motion/react";
+import { motion } from "motion/react";
 import React, { useState } from "react";
 import toast from "react-hot-toast";
 import { useNavigate } from "react-router-dom";
@@ -27,7 +24,6 @@ import { useShopSettings } from "../hooks/useShopSettings";
 import { webhookService } from "../services/webhookService";
 
 export default function Home() {
-  const [step, setStep] = useState<"phone" | "details">("phone");
   const [ddd, setDdd] = useState("21");
   const [phone, setPhone] = useState("");
   const [name, setName] = useState("");
@@ -38,10 +34,14 @@ export default function Home() {
   const navigate = useNavigate();
   const { shopName, logoUrl, webhookUrl, trackingUrlBase } = useShopSettings();
 
-  const handlePhoneSubmit = async (e: React.FormEvent) => {
+  const handleJoinSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (phone.length < 8) {
       toast.error("Por favor, insira um número de telefone válido");
+      return;
+    }
+    if (!name.trim()) {
+      toast.error("Por favor, insira seu nome");
       return;
     }
 
@@ -49,55 +49,10 @@ export default function Home() {
     const fullPhone = `${ddd}${phone}`;
 
     try {
-      // Check if already in queue
-      const { data: customer } = await supabase
-        .from("customers")
-        .select("*")
-        .eq("phone", fullPhone)
-        .order("created_at", { ascending: false })
-        .limit(1)
-        .maybeSingle();
-
-      if (customer) {
-        const { data: queueEntry } = await supabase
-          .from("queue")
-          .select("*")
-          .eq("customer_id", customer.id)
-          .in("status", ["waiting", "serving"])
-          .maybeSingle();
-
-        if (queueEntry) {
-          toast.success("Você já está na fila!");
-          localStorage.setItem("barber_customer_id", customer.id);
-          localStorage.setItem("barber_queue_id", queueEntry.id);
-          localStorage.setItem("barber_queue_code", queueEntry.code);
-          localStorage.setItem("barber_customer_phone", fullPhone);
-          navigate("/queue");
-          return;
-        }
-        setName(customer.name);
-      }
-
-      // Se não estiver na fila, avança para a tela de detalhes
-      setStep("details");
-    } catch (error) {
-      console.error(error);
-      toast.error("Algo deu errado. Por favor, tente novamente.");
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleJoinSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setLoading(true);
-    const fullPhone = `${ddd}${phone}`;
-
-    try {
       let customerId;
       const { data: existingCustomer, error: fetchError } = await supabase
         .from("customers")
-        .select("id")
+        .select("id, name")
         .eq("phone", fullPhone)
         .order("created_at", { ascending: false })
         .limit(1)
@@ -107,6 +62,24 @@ export default function Home() {
 
       if (existingCustomer) {
         customerId = existingCustomer.id;
+
+        const { data: queueEntry } = await supabase
+          .from("queue")
+          .select("*")
+          .eq("customer_id", customerId)
+          .in("status", ["waiting", "serving"])
+          .maybeSingle();
+
+        if (queueEntry) {
+          toast.success("Você já está na fila!");
+          localStorage.setItem("barber_customer_id", customerId);
+          localStorage.setItem("barber_queue_id", queueEntry.id);
+          localStorage.setItem("barber_queue_code", queueEntry.code);
+          localStorage.setItem("barber_customer_phone", fullPhone);
+          navigate("/queue");
+          return;
+        }
+
         const { error: updateError } = await supabase
           .from("customers")
           .update({ name })
@@ -253,17 +226,13 @@ export default function Home() {
             <p className="mt-1 text-sm opacity-90">{message}</p>
           </div>
         ) : (
-          <form
-            onSubmit={step === "phone" ? handlePhoneSubmit : handleJoinSubmit}
-            className="space-y-4"
-          >
+          <form onSubmit={handleJoinSubmit} className="space-y-4">
             <div className="flex space-x-2">
               <div className="relative w-24 shrink-0">
                 <select
                   value={ddd}
                   onChange={(e) => {
                     setDdd(e.target.value);
-                    if (step === "details") setStep("phone");
                   }}
                   className="h-14 w-full appearance-none rounded-2xl border border-neutral-200 bg-white px-4 text-lg shadow-sm transition-all focus:border-emerald-500 focus:ring-4 focus:ring-emerald-100 outline-none dark:bg-neutral-900 dark:border-neutral-800 dark:text-white dark:focus:border-emerald-500 dark:focus:ring-emerald-900/30"
                 >
@@ -291,7 +260,6 @@ export default function Home() {
                     const val = e.target.value.replace(/\D/g, "");
                     if (val.length <= 9) {
                       setPhone(val);
-                      if (step === "details") setStep("phone");
                     }
                   }}
                   className="h-14 w-full rounded-2xl border border-neutral-200 bg-white px-12 text-lg shadow-sm transition-all focus:border-emerald-500 focus:ring-4 focus:ring-emerald-100 outline-none dark:bg-neutral-900 dark:border-neutral-800 dark:text-white dark:focus:border-emerald-500 dark:focus:ring-emerald-900/30 disabled"
@@ -302,7 +270,6 @@ export default function Home() {
                     type="button"
                     onClick={() => {
                       setPhone("");
-                      setStep("phone");
                     }}
                     className="absolute right-4 top-1/2 -translate-y-1/2 text-neutral-400 transition-colors hover:text-neutral-600 dark:hover:text-neutral-300"
                   >
@@ -311,87 +278,56 @@ export default function Home() {
                 )}
               </div>
             </div>
-            <AnimatePresence>
-              {step === "details" && (
-                <motion.div
-                  initial={{ opacity: 0, height: 0 }}
-                  animate={{ opacity: 1, height: "auto" }}
-                  exit={{ opacity: 0, height: 0 }}
-                  className="space-y-6 text-left overflow-hidden"
-                >
-                  <div className="pt-2">
-                    <label className="mb-2 block text-sm font-semibold text-neutral-700 dark:text-neutral-300">
-                      Seu Nome
-                    </label>
-                    <div className="relative">
-                      <User className="absolute top-1/2 left-4 h-5 w-5 -translate-y-1/2 text-neutral-400" />
-                      <input
-                        type="text"
-                        placeholder="Digite seu nome completo"
-                        value={name}
-                        onChange={(e) => setName(e.target.value)}
-                        className="h-14 w-full rounded-xl border border-neutral-200 bg-white px-12 text-lg shadow-sm transition-all focus:border-emerald-500 focus:ring-4 focus:ring-emerald-100 outline-none dark:bg-neutral-900 dark:border-neutral-800 dark:text-white dark:focus:border-emerald-500 dark:focus:ring-emerald-900/30"
-                        required
-                      />
-                    </div>
-                  </div>
 
-                  <div className="grid grid-cols-2 gap-3">
-                    <div className="rounded-xl bg-white p-4 text-center border border-neutral-200 shadow-sm dark:bg-neutral-900 dark:border-neutral-800">
-                      <Users className="mx-auto mb-2 h-6 w-6 text-emerald-600" />
-                      <p className="text-xs font-bold uppercase text-neutral-500 dark:text-neutral-500">
-                        Sua posição estimada
-                      </p>
-                      <p className="text-2xl font-black text-neutral-900 dark:text-white">
-                        {queueCount + 1}º
-                      </p>
-                    </div>
-                    <div className="rounded-xl bg-white p-4 text-center border border-neutral-200 shadow-sm dark:bg-neutral-900 dark:border-neutral-800">
-                      <Clock className="mx-auto mb-2 h-6 w-6 text-emerald-600" />
-                      <p className="text-xs font-bold uppercase text-neutral-500 dark:text-neutral-500">
-                        Tempo estimado de espera
-                      </p>
-                      <p className="text-2xl font-black text-neutral-900 dark:text-white">
-                        {queueCount * avgServiceTime > 0
-                          ? `${Math.floor((queueCount * avgServiceTime) / 60) > 0 ? `${Math.floor((queueCount * avgServiceTime) / 60)}h` : ""}${(queueCount * avgServiceTime) % 60}m`
-                          : "0m"}
-                      </p>
-                    </div>
-                  </div>
+            <div className="space-y-6 text-left">
+              <div className="pt-2">
+                <label className="mb-2 block text-sm font-semibold text-neutral-700 dark:text-neutral-300">
+                  Seu Nome
+                </label>
+                <div className="relative">
+                  <User className="absolute top-1/2 left-4 h-5 w-5 -translate-y-1/2 text-neutral-400" />
+                  <input
+                    type="text"
+                    placeholder="Digite seu nome completo"
+                    value={name}
+                    onChange={(e) => setName(e.target.value)}
+                    className="h-14 w-full rounded-xl border border-neutral-200 bg-white px-12 text-lg shadow-sm transition-all focus:border-emerald-500 focus:ring-4 focus:ring-emerald-100 outline-none dark:bg-neutral-900 dark:border-neutral-800 dark:text-white dark:focus:border-emerald-500 dark:focus:ring-emerald-900/30"
+                    required
+                  />
+                </div>
+              </div>
 
-                  <div className="flex gap-3 items-center text-center justify-center rounded-xl bg-amber-50 p-4 border border-amber-200 dark:bg-amber-900/20 dark:border-amber-900/30">
-                    <AlertTriangle className="h-6 w-6 shrink-0 text-amber-600 dark:text-amber-500" />
-                    <div className="flex flex-col justify-center text-center">
-                      <p className="text-sm text-amber-800 dark:text-amber-400 font-medium">
-                        Atenção: Você ainda não está na fila.
-                      </p>
-                      <div className="flex gap-4 text-center items-center justify-center">
-                        <p className="text-sm text-amber-800 dark:text-amber-400 font-medium">
-                          Confirme abaixo.
-                        </p>
-                        <ArrowDown className="text-sm text-amber-800 dark:text-amber-400 font-medium" />
-                      </div>
-                    </div>
-                  </div>
-                </motion.div>
-              )}
-            </AnimatePresence>
+              <div className="grid grid-cols-2 gap-3">
+                <div className="rounded-xl bg-white p-4 text-center border border-neutral-200 shadow-sm dark:bg-neutral-900 dark:border-neutral-800">
+                  <Users className="mx-auto mb-2 h-6 w-6 text-emerald-600" />
+                  <p className="text-xs font-bold uppercase text-neutral-500 dark:text-neutral-500">
+                    Sua posição estimada
+                  </p>
+                  <p className="text-2xl font-black text-neutral-900 dark:text-white">
+                    {queueCount + 1}º
+                  </p>
+                </div>
+                <div className="rounded-xl bg-white p-4 text-center border border-neutral-200 shadow-sm dark:bg-neutral-900 dark:border-neutral-800">
+                  <Clock className="mx-auto mb-2 h-6 w-6 text-emerald-600" />
+                  <p className="text-xs font-bold uppercase text-neutral-500 dark:text-neutral-500">
+                    Tempo estimado
+                  </p>
+                  <p className="text-2xl font-black text-neutral-900 dark:text-white">
+                    {queueCount * avgServiceTime > 0
+                      ? `${Math.floor((queueCount * avgServiceTime) / 60) > 0 ? `${Math.floor((queueCount * avgServiceTime) / 60)}h` : ""}${(queueCount * avgServiceTime) % 60}m`
+                      : "0m"}
+                  </p>
+                </div>
+              </div>
+            </div>
+
             <button
               type="submit"
               disabled={loading}
-              className={`group relative flex h-14 w-full items-center justify-center rounded-2xl text-lg font-semibold text-white shadow-lg transition-all active:scale-[0.98] disabled:opacity-70 ${
-                step === "details"
-                  ? "bg-emerald-600 hover:bg-emerald-700 shadow-emerald-200 dark:shadow-none"
-                  : "bg-neutral-900 hover:bg-neutral-800 dark:bg-emerald-600 dark:hover:bg-emerald-700 dark:shadow-none"
-              }`}
+              className="mt-4 group relative flex h-14 w-full items-center justify-center rounded-2xl text-lg font-semibold text-white shadow-lg transition-all active:scale-[0.98] disabled:opacity-70 bg-emerald-600 hover:bg-emerald-700 shadow-emerald-200 dark:shadow-none"
             >
               {loading ? (
                 <Loader2 className="h-6 w-6 animate-spin" />
-              ) : step === "details" ? (
-                <>
-                  Confirmar Entrada na Fila
-                  <CheckCircle2 className="ml-2 h-5 w-5" />
-                </>
               ) : (
                 <>
                   Entrar na Fila

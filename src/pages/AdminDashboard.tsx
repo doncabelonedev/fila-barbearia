@@ -672,7 +672,7 @@ export default function AdminDashboard() {
                                   </div>
                                 )}
                                 <div
-                                  className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-xl font-black ${
+                                  className={`flex h-12 w-auto p-2 shrink-0 items-center justify-center rounded-xl font-black ${
                                     item.status === "serving"
                                       ? "bg-emerald-600 text-white"
                                       : "bg-neutral-100 text-neutral-900 dark:bg-neutral-800 dark:text-white"

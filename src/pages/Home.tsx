@@ -13,13 +13,13 @@ import { motion } from "motion/react";
 import toast from "react-hot-toast";
 
 import { useShopSettings } from "../hooks/useShopSettings";
+import { DDD_OPTIONS } from "../constants/constants";
 
 export default function Home() {
   const [ddd, setDdd] = useState("21");
   const [phone, setPhone] = useState("");
   const [loading, setLoading] = useState(false);
   const { isOpen, message, loading: statusLoading } = useShopStatus();
-  const [connectionError, setConnectionError] = useState<string | null>(null);
   const navigate = useNavigate();
   const { shopName, logoUrl } = useShopSettings();
 
@@ -112,37 +112,7 @@ export default function Home() {
           </p>
         </div>
 
-        {connectionError && (
-          <div className="rounded-2xl border border-red-200 bg-red-50 p-6 text-red-800 shadow-sm text-left dark:bg-red-900/20 dark:border-red-900/30 dark:text-red-400">
-            <p className="font-bold flex items-center">
-              <AlertCircle className="mr-2 h-5 w-5" />
-              Erro de Conexão com o Banco
-            </p>
-            <p className="mt-2 text-sm opacity-90">
-              Não foi possível buscar dados do Supabase. Verifique se:
-            </p>
-            <ul className="mt-2 list-disc pl-5 text-xs space-y-1 opacity-80">
-              <li>
-                As chaves no painel <strong>Secrets</strong> estão corretas.
-              </li>
-              <li>
-                O RLS (Row Level Security) está desativado ou com políticas
-                públicas.
-              </li>
-              <li>
-                A URL do projeto está correta:{" "}
-                <code className="bg-red-100 px-1 rounded dark:bg-red-900/40">
-                  {supabaseUrl}
-                </code>
-              </li>
-            </ul>
-            <p className="mt-3 text-[10px] font-mono break-all opacity-60">
-              Erro: {connectionError}
-            </p>
-          </div>
-        )}
-
-        {!isOpen && !connectionError ? (
+        {!isOpen ? (
           <div className="rounded-2xl border border-amber-200 bg-amber-50 p-6 text-amber-800 shadow-sm dark:bg-amber-900/20 dark:border-amber-900/30 dark:text-amber-400">
             <p className="font-medium">A barbearia está fechada no momento.</p>
             <p className="mt-1 text-sm opacity-90">{message}</p>
@@ -156,75 +126,7 @@ export default function Home() {
                   onChange={(e) => setDdd(e.target.value)}
                   className="h-14 w-full appearance-none rounded-2xl border border-neutral-200 bg-white px-4 text-lg shadow-sm transition-all focus:border-emerald-500 focus:ring-4 focus:ring-emerald-100 outline-none dark:bg-neutral-900 dark:border-neutral-800 dark:text-white dark:focus:border-emerald-500 dark:focus:ring-emerald-900/30"
                 >
-                  {[
-                    "11",
-                    "12",
-                    "13",
-                    "14",
-                    "15",
-                    "16",
-                    "17",
-                    "18",
-                    "19",
-                    "21",
-                    "22",
-                    "24",
-                    "27",
-                    "28",
-                    "31",
-                    "32",
-                    "33",
-                    "34",
-                    "35",
-                    "37",
-                    "38",
-                    "41",
-                    "42",
-                    "43",
-                    "44",
-                    "45",
-                    "46",
-                    "47",
-                    "48",
-                    "49",
-                    "51",
-                    "53",
-                    "54",
-                    "55",
-                    "61",
-                    "62",
-                    "63",
-                    "64",
-                    "65",
-                    "66",
-                    "67",
-                    "68",
-                    "69",
-                    "71",
-                    "73",
-                    "74",
-                    "75",
-                    "77",
-                    "79",
-                    "81",
-                    "82",
-                    "83",
-                    "84",
-                    "85",
-                    "86",
-                    "87",
-                    "88",
-                    "89",
-                    "91",
-                    "92",
-                    "93",
-                    "94",
-                    "95",
-                    "96",
-                    "97",
-                    "98",
-                    "99",
-                  ].map((code) => (
+                  {DDD_OPTIONS.map((code) => (
                     <option key={code} value={code}>
                       {code}
                     </option>

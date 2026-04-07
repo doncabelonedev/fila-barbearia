@@ -1,6 +1,5 @@
 import {
   AlertTriangle,
-  ArrowLeft,
   ArrowRight,
   CheckCircle2,
   Clock,
@@ -10,7 +9,7 @@ import {
   User,
   Users,
 } from "lucide-react";
-import { motion } from "motion/react";
+import { AnimatePresence, motion } from "motion/react";
 import React, { useState } from "react";
 import toast from "react-hot-toast";
 import { useNavigate } from "react-router-dom";
@@ -251,13 +250,19 @@ export default function Home() {
             <p className="font-medium">A barbearia está fechada no momento.</p>
             <p className="mt-1 text-sm opacity-90">{message}</p>
           </div>
-        ) : step === "phone" ? (
-          <form onSubmit={handlePhoneSubmit} className="space-y-4">
+        ) : (
+          <form
+            onSubmit={step === "phone" ? handlePhoneSubmit : handleJoinSubmit}
+            className="space-y-4"
+          >
             <div className="flex space-x-2">
               <div className="relative w-24 shrink-0">
                 <select
                   value={ddd}
-                  onChange={(e) => setDdd(e.target.value)}
+                  onChange={(e) => {
+                    setDdd(e.target.value);
+                    if (step === "details") setStep("phone");
+                  }}
                   className="h-14 w-full appearance-none rounded-2xl border border-neutral-200 bg-white px-4 text-lg shadow-sm transition-all focus:border-emerald-500 focus:ring-4 focus:ring-emerald-100 outline-none dark:bg-neutral-900 dark:border-neutral-800 dark:text-white dark:focus:border-emerald-500 dark:focus:ring-emerald-900/30"
                 >
                   {DDD_OPTIONS.map((code) => (
@@ -282,20 +287,89 @@ export default function Home() {
                   value={phone}
                   onChange={(e) => {
                     const val = e.target.value.replace(/\D/g, "");
-                    if (val.length <= 9) setPhone(val);
+                    if (val.length <= 9) {
+                      setPhone(val);
+                      if (step === "details") setStep("phone");
+                    }
                   }}
-                  className="h-14 w-full rounded-2xl border border-neutral-200 bg-white px-12 text-lg shadow-sm transition-all focus:border-emerald-500 focus:ring-4 focus:ring-emerald-100 outline-none dark:bg-neutral-900 dark:border-neutral-800 dark:text-white dark:focus:border-emerald-500 dark:focus:ring-emerald-900/30"
+                  className="h-14 w-full rounded-2xl border border-neutral-200 bg-white px-12 text-lg shadow-sm transition-all focus:border-emerald-500 focus:ring-4 focus:ring-emerald-100 outline-none dark:bg-neutral-900 dark:border-neutral-800 dark:text-white dark:focus:border-emerald-500 dark:focus:ring-emerald-900/30 disabled"
                   required
                 />
               </div>
             </div>
+            <AnimatePresence>
+              {step === "details" && (
+                <motion.div
+                  initial={{ opacity: 0, height: 0 }}
+                  animate={{ opacity: 1, height: "auto" }}
+                  exit={{ opacity: 0, height: 0 }}
+                  className="space-y-6 text-left overflow-hidden"
+                >
+                  <div className="pt-2">
+                    <label className="mb-2 block text-sm font-semibold text-neutral-700 dark:text-neutral-300">
+                      Seu Nome
+                    </label>
+                    <div className="relative">
+                      <User className="absolute top-1/2 left-4 h-5 w-5 -translate-y-1/2 text-neutral-400" />
+                      <input
+                        type="text"
+                        placeholder="Digite seu nome completo"
+                        value={name}
+                        onChange={(e) => setName(e.target.value)}
+                        className="h-14 w-full rounded-xl border border-neutral-200 bg-white px-12 text-lg shadow-sm transition-all focus:border-emerald-500 focus:ring-4 focus:ring-emerald-100 outline-none dark:bg-neutral-900 dark:border-neutral-800 dark:text-white dark:focus:border-emerald-500 dark:focus:ring-emerald-900/30"
+                        required
+                      />
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="rounded-xl bg-white p-4 text-center border border-neutral-200 shadow-sm dark:bg-neutral-900 dark:border-neutral-800">
+                      <Users className="mx-auto mb-2 h-6 w-6 text-emerald-600" />
+                      <p className="text-xs font-bold uppercase text-neutral-500 dark:text-neutral-500">
+                        Sua posição estimada
+                      </p>
+                      <p className="text-2xl font-black text-neutral-900 dark:text-white">
+                        {queueCount + 1}º
+                      </p>
+                    </div>
+                    <div className="rounded-xl bg-white p-4 text-center border border-neutral-200 shadow-sm dark:bg-neutral-900 dark:border-neutral-800">
+                      <Clock className="mx-auto mb-2 h-6 w-6 text-emerald-600" />
+                      <p className="text-xs font-bold uppercase text-neutral-500 dark:text-neutral-500">
+                        Tempo estimado de espera
+                      </p>
+                      <p className="text-2xl font-black text-neutral-900 dark:text-white">
+                        {queueCount * avgServiceTime > 0
+                          ? `${Math.floor((queueCount * avgServiceTime) / 60) > 0 ? `${Math.floor((queueCount * avgServiceTime) / 60)}h` : ""}${(queueCount * avgServiceTime) % 60}m`
+                          : "0m"}
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="flex gap-3 items-center justify-center rounded-xl bg-amber-50 p-4 border border-amber-200 dark:bg-amber-900/20 dark:border-amber-900/30">
+                    <AlertTriangle className="h-6 w-6 shrink-0 text-amber-600 dark:text-amber-500" />
+                    <p className="text-sm text-amber-800 dark:text-amber-400 font-medium">
+                      Atenção: Você ainda não está na fila. Confirme abaixo.
+                    </p>
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
             <button
               type="submit"
               disabled={loading}
-              className="group relative flex h-14 w-full items-center justify-center rounded-2xl bg-neutral-900 text-lg font-semibold text-white shadow-lg transition-all hover:bg-neutral-800 active:scale-[0.98] disabled:opacity-70 dark:bg-emerald-600 dark:hover:bg-emerald-700"
+              className={`group relative flex h-14 w-full items-center justify-center rounded-2xl text-lg font-semibold text-white shadow-lg transition-all active:scale-[0.98] disabled:opacity-70 ${
+                step === "details"
+                  ? "bg-emerald-600 hover:bg-emerald-700 shadow-emerald-200 dark:shadow-none"
+                  : "bg-neutral-900 hover:bg-neutral-800 dark:bg-emerald-600 dark:hover:bg-emerald-700 dark:shadow-none"
+              }`}
             >
               {loading ? (
                 <Loader2 className="h-6 w-6 animate-spin" />
+              ) : step === "details" ? (
+                <>
+                  Confirmar Entrada na Fila
+                  <CheckCircle2 className="ml-2 h-5 w-5" />
+                </>
               ) : (
                 <>
                   Entrar na Fila
@@ -304,87 +378,6 @@ export default function Home() {
               )}
             </button>
           </form>
-        ) : (
-          <motion.div
-            initial={{ opacity: 0, scale: 0.95 }}
-            animate={{ opacity: 1, scale: 1 }}
-            className="space-y-6 text-left"
-          >
-            <button
-              type="button"
-              onClick={() => setStep("phone")}
-              className="flex items-center text-neutral-500 hover:text-neutral-800 transition-colors dark:text-neutral-400 dark:hover:text-neutral-200"
-            >
-              <ArrowLeft className="mr-2 h-4 w-4" />
-              Voltar
-            </button>
-
-            <div className="flex gap-4 items-center justify-center">
-              <AlertTriangle className="h-6 w-6 shrink-0 text-amber-600 dark:text-amber-500" />
-              <div>
-                <p className="dark:text-amber-400">
-                  Você ainda não está na fila.
-                </p>
-              </div>
-            </div>
-
-            <div className="grid grid-cols-2 gap-3">
-              <div className="rounded-xl bg-white p-4 text-center border border-neutral-200 shadow-sm dark:bg-neutral-900 dark:border-neutral-800">
-                <Users className="mx-auto mb-2 h-6 w-6 text-emerald-600" />
-                <p className="text-xs font-bold uppercase text-neutral-500 dark:text-neutral-500">
-                  Sua posição estimada
-                </p>
-                <p className="text-2xl font-black text-neutral-900 dark:text-white">
-                  {queueCount + 1}º
-                </p>
-              </div>
-              <div className="rounded-xl bg-white p-4 text-center border border-neutral-200 shadow-sm dark:bg-neutral-900 dark:border-neutral-800">
-                <Clock className="mx-auto mb-2 h-6 w-6 text-emerald-600" />
-                <p className="text-xs font-bold uppercase text-neutral-500 dark:text-neutral-500">
-                  Tempo estimado de espera
-                </p>
-                <p className="text-2xl font-black text-neutral-900 dark:text-white">
-                  {queueCount * avgServiceTime > 0
-                    ? `${Math.floor((queueCount * avgServiceTime) / 60) > 0 ? `${Math.floor((queueCount * avgServiceTime) / 60)}h` : ""}${(queueCount * avgServiceTime) % 60}m`
-                    : "0m"}
-                </p>
-              </div>
-            </div>
-
-            <form onSubmit={handleJoinSubmit} className="space-y-4">
-              <div>
-                <label className="mb-2 block text-sm font-semibold text-neutral-700 dark:text-neutral-300">
-                  Seu Nome
-                </label>
-                <div className="relative">
-                  <User className="absolute top-1/2 left-4 h-5 w-5 -translate-y-1/2 text-neutral-400" />
-                  <input
-                    type="text"
-                    placeholder="Digite seu nome completo"
-                    value={name}
-                    onChange={(e) => setName(e.target.value)}
-                    className="h-14 w-full rounded-xl border border-neutral-200 bg-white px-12 text-lg shadow-sm transition-all focus:border-emerald-500 focus:ring-4 focus:ring-emerald-100 outline-none dark:bg-neutral-900 dark:border-neutral-800 dark:text-white dark:focus:border-emerald-500 dark:focus:ring-emerald-900/30"
-                    required
-                  />
-                </div>
-              </div>
-
-              <button
-                type="submit"
-                disabled={loading}
-                className="flex h-14 w-full items-center justify-center rounded-xl bg-emerald-600 text-lg font-semibold text-white shadow-lg shadow-emerald-200 transition-all hover:bg-emerald-700 active:scale-[0.98] disabled:opacity-70 dark:shadow-none"
-              >
-                {loading ? (
-                  <Loader2 className="h-6 w-6 animate-spin" />
-                ) : (
-                  <>
-                    Confirmar Entrada na Fila
-                    <CheckCircle2 className="ml-2 h-5 w-5" />
-                  </>
-                )}
-              </button>
-            </form>
-          </motion.div>
         )}
 
         <div className="pt-8 text-xs text-neutral-400 uppercase tracking-widest">

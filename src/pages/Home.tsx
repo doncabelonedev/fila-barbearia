@@ -227,6 +227,25 @@ export default function Home() {
           </div>
         ) : (
           <form onSubmit={handleJoinSubmit} className="space-y-4">
+            <div className="space-y-6 text-left">
+              <div className="pt-2">
+                <label className="mb-2 block text-sm font-semibold text-neutral-700 dark:text-neutral-300">
+                  Seu Nome
+                </label>
+                <div className="relative">
+                  <User className="absolute top-1/2 left-4 h-5 w-5 -translate-y-1/2 text-neutral-400" />
+                  <input
+                    type="text"
+                    placeholder="Digite seu nome completo"
+                    value={name}
+                    onChange={(e) => setName(e.target.value)}
+                    className="h-14 w-full rounded-xl border border-neutral-200 bg-white px-12 text-lg shadow-sm transition-all focus:border-emerald-500 focus:ring-4 focus:ring-emerald-100 outline-none dark:bg-neutral-900 dark:border-neutral-800 dark:text-white dark:focus:border-emerald-500 dark:focus:ring-emerald-900/30"
+                    required
+                  />
+                </div>
+              </div>
+            </div>
+
             <div className="flex space-x-2">
               <div className="relative w-24 shrink-0">
                 <select
@@ -280,23 +299,6 @@ export default function Home() {
             </div>
 
             <div className="space-y-6 text-left">
-              <div className="pt-2">
-                <label className="mb-2 block text-sm font-semibold text-neutral-700 dark:text-neutral-300">
-                  Seu Nome
-                </label>
-                <div className="relative">
-                  <User className="absolute top-1/2 left-4 h-5 w-5 -translate-y-1/2 text-neutral-400" />
-                  <input
-                    type="text"
-                    placeholder="Digite seu nome completo"
-                    value={name}
-                    onChange={(e) => setName(e.target.value)}
-                    className="h-14 w-full rounded-xl border border-neutral-200 bg-white px-12 text-lg shadow-sm transition-all focus:border-emerald-500 focus:ring-4 focus:ring-emerald-100 outline-none dark:bg-neutral-900 dark:border-neutral-800 dark:text-white dark:focus:border-emerald-500 dark:focus:ring-emerald-900/30"
-                    required
-                  />
-                </div>
-              </div>
-
               <div className="grid grid-cols-2 gap-3">
                 <div className="rounded-xl bg-white p-4 text-center border border-neutral-200 shadow-sm dark:bg-neutral-900 dark:border-neutral-800">
                   <Users className="mx-auto mb-2 h-6 w-6 text-emerald-600" />

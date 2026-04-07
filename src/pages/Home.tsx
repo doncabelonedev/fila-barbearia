@@ -1,29 +1,43 @@
-import React, { useState } from "react";
-import { useNavigate } from "react-router-dom";
-import { supabase, supabaseUrl } from "../lib/supabase";
-import { useShopStatus } from "../hooks/useQueue";
 import {
-  Scissors,
-  Phone,
+  AlertTriangle,
+  ArrowLeft,
   ArrowRight,
+  CheckCircle2,
+  Clock,
   Loader2,
-  AlertCircle,
+  Phone,
+  Scissors,
+  User,
+  Users,
 } from "lucide-react";
 import { motion } from "motion/react";
+import React, { useState } from "react";
 import toast from "react-hot-toast";
+import { useNavigate } from "react-router-dom";
+import {
+  useAverageServiceTime,
+  useQueueCount,
+  useShopStatus,
+} from "../hooks/useQueue";
+import { supabase } from "../lib/supabase";
 
-import { useShopSettings } from "../hooks/useShopSettings";
 import { DDD_OPTIONS } from "../constants/constants";
+import { useShopSettings } from "../hooks/useShopSettings";
+import { webhookService } from "../services/webhookService";
 
 export default function Home() {
+  const [step, setStep] = useState<"phone" | "details">("phone");
   const [ddd, setDdd] = useState("21");
   const [phone, setPhone] = useState("");
+  const [name, setName] = useState("");
   const [loading, setLoading] = useState(false);
   const { isOpen, message, loading: statusLoading } = useShopStatus();
+  const queueCount = useQueueCount();
+  const avgServiceTime = useAverageServiceTime();
   const navigate = useNavigate();
-  const { shopName, logoUrl } = useShopSettings();
+  const { shopName, logoUrl, webhookUrl, trackingUrlBase } = useShopSettings();
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handlePhoneSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (phone.length < 8) {
       toast.error("Por favor, insira um número de telefone válido");
@@ -55,16 +69,136 @@ export default function Home() {
           toast.success("Você já está na fila!");
           localStorage.setItem("barber_customer_id", customer.id);
           localStorage.setItem("barber_queue_id", queueEntry.id);
+          localStorage.setItem("barber_queue_code", queueEntry.code);
+          localStorage.setItem("barber_customer_phone", fullPhone);
           navigate("/queue");
           return;
         }
+        setName(customer.name);
       }
 
-      // If not in queue, go to join page
-      navigate("/join", { state: { phone: fullPhone } });
+      // Se não estiver na fila, avança para a tela de detalhes
+      setStep("details");
     } catch (error) {
       console.error(error);
       toast.error("Algo deu errado. Por favor, tente novamente.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleJoinSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoading(true);
+    const fullPhone = `${ddd}${phone}`;
+
+    try {
+      let customerId;
+      const { data: existingCustomer, error: fetchError } = await supabase
+        .from("customers")
+        .select("id")
+        .eq("phone", fullPhone)
+        .order("created_at", { ascending: false })
+        .limit(1)
+        .maybeSingle();
+
+      if (fetchError) throw fetchError;
+
+      if (existingCustomer) {
+        customerId = existingCustomer.id;
+        const { error: updateError } = await supabase
+          .from("customers")
+          .update({ name })
+          .eq("id", customerId);
+        if (updateError) throw updateError;
+      } else {
+        const { data: newCustomer, error: createError } = await supabase
+          .from("customers")
+          .insert([{ name, phone: fullPhone }])
+          .select()
+          .single();
+        if (createError) throw createError;
+        customerId = newCustomer.id;
+      }
+
+      if (!customerId)
+        throw new Error("Não foi possível identificar o cliente.");
+
+      const { data: lastEntry, error: lastEntryError } = await supabase
+        .from("queue")
+        .select("position, code")
+        .order("created_at", { ascending: false })
+        .limit(1)
+        .maybeSingle();
+
+      if (lastEntryError) throw lastEntryError;
+
+      const nextPosition = (lastEntry?.position || 0) + 1;
+
+      const letters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+      const numbers = "0123456789";
+      const allChars = letters + numbers;
+      let nextCode = "";
+
+      for (let i = 0; i < 4; i++) {
+        nextCode += allChars.charAt(
+          Math.floor(Math.random() * allChars.length),
+        );
+      }
+
+      if (!/\d/.test(nextCode)) {
+        nextCode += numbers.charAt(Math.floor(Math.random() * numbers.length));
+      } else {
+        nextCode += allChars.charAt(
+          Math.floor(Math.random() * allChars.length),
+        );
+      }
+
+      nextCode = nextCode
+        .split("")
+        .sort(() => Math.random() - 0.5)
+        .join("");
+
+      const { data: queueEntry, error: queueError } = await supabase
+        .from("queue")
+        .insert([
+          {
+            customer_id: customerId,
+            code: nextCode,
+            position: nextPosition,
+            status: "waiting",
+          },
+        ])
+        .select("*, customer:customer_id(*)")
+        .single();
+
+      if (queueError) throw queueError;
+      if (!queueEntry) throw new Error("Falha ao confirmar entrada na fila.");
+
+      localStorage.setItem("barber_customer_id", customerId);
+      localStorage.setItem("barber_queue_id", queueEntry.id);
+      localStorage.setItem("barber_queue_code", queueEntry.code);
+      localStorage.setItem("barber_customer_phone", fullPhone);
+
+      webhookService.sendWebhook(
+        "JOINED",
+        queueEntry,
+        nextPosition,
+        queueCount,
+        avgServiceTime,
+        shopName,
+        webhookUrl,
+        trackingUrlBase,
+      );
+
+      toast.success("Entrou na fila com sucesso!");
+      navigate("/queue");
+    } catch (error: any) {
+      console.error(error);
+      toast.error(
+        error?.message ||
+          "Falha ao entrar na fila. Por favor, tente novamente.",
+      );
     } finally {
       setLoading(false);
     }
@@ -117,8 +251,8 @@ export default function Home() {
             <p className="font-medium">A barbearia está fechada no momento.</p>
             <p className="mt-1 text-sm opacity-90">{message}</p>
           </div>
-        ) : (
-          <form onSubmit={handleSubmit} className="space-y-4">
+        ) : step === "phone" ? (
+          <form onSubmit={handlePhoneSubmit} className="space-y-4">
             <div className="flex space-x-2">
               <div className="relative w-24 shrink-0">
                 <select
@@ -170,6 +304,87 @@ export default function Home() {
               )}
             </button>
           </form>
+        ) : (
+          <motion.div
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            className="space-y-6 text-left"
+          >
+            <button
+              type="button"
+              onClick={() => setStep("phone")}
+              className="flex items-center text-neutral-500 hover:text-neutral-800 transition-colors dark:text-neutral-400 dark:hover:text-neutral-200"
+            >
+              <ArrowLeft className="mr-2 h-4 w-4" />
+              Voltar
+            </button>
+
+            <div className="flex gap-4 items-center justify-center">
+              <AlertTriangle className="h-6 w-6 shrink-0 text-amber-600 dark:text-amber-500" />
+              <div>
+                <p className="dark:text-amber-400">
+                  Você ainda não está na fila.
+                </p>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-3">
+              <div className="rounded-xl bg-white p-4 text-center border border-neutral-200 shadow-sm dark:bg-neutral-900 dark:border-neutral-800">
+                <Users className="mx-auto mb-2 h-6 w-6 text-emerald-600" />
+                <p className="text-xs font-bold uppercase text-neutral-500 dark:text-neutral-500">
+                  Sua posição estimada
+                </p>
+                <p className="text-2xl font-black text-neutral-900 dark:text-white">
+                  {queueCount + 1}º
+                </p>
+              </div>
+              <div className="rounded-xl bg-white p-4 text-center border border-neutral-200 shadow-sm dark:bg-neutral-900 dark:border-neutral-800">
+                <Clock className="mx-auto mb-2 h-6 w-6 text-emerald-600" />
+                <p className="text-xs font-bold uppercase text-neutral-500 dark:text-neutral-500">
+                  Tempo estimado de espera
+                </p>
+                <p className="text-2xl font-black text-neutral-900 dark:text-white">
+                  {queueCount * avgServiceTime > 0
+                    ? `${Math.floor((queueCount * avgServiceTime) / 60) > 0 ? `${Math.floor((queueCount * avgServiceTime) / 60)}h` : ""}${(queueCount * avgServiceTime) % 60}m`
+                    : "0m"}
+                </p>
+              </div>
+            </div>
+
+            <form onSubmit={handleJoinSubmit} className="space-y-4">
+              <div>
+                <label className="mb-2 block text-sm font-semibold text-neutral-700 dark:text-neutral-300">
+                  Seu Nome
+                </label>
+                <div className="relative">
+                  <User className="absolute top-1/2 left-4 h-5 w-5 -translate-y-1/2 text-neutral-400" />
+                  <input
+                    type="text"
+                    placeholder="Digite seu nome completo"
+                    value={name}
+                    onChange={(e) => setName(e.target.value)}
+                    className="h-14 w-full rounded-xl border border-neutral-200 bg-white px-12 text-lg shadow-sm transition-all focus:border-emerald-500 focus:ring-4 focus:ring-emerald-100 outline-none dark:bg-neutral-900 dark:border-neutral-800 dark:text-white dark:focus:border-emerald-500 dark:focus:ring-emerald-900/30"
+                    required
+                  />
+                </div>
+              </div>
+
+              <button
+                type="submit"
+                disabled={loading}
+                className="flex h-14 w-full items-center justify-center rounded-xl bg-emerald-600 text-lg font-semibold text-white shadow-lg shadow-emerald-200 transition-all hover:bg-emerald-700 active:scale-[0.98] disabled:opacity-70 dark:shadow-none"
+              >
+                {loading ? (
+                  <Loader2 className="h-6 w-6 animate-spin" />
+                ) : (
+                  <>
+                    Confirmar Entrada na Fila
+                    <CheckCircle2 className="ml-2 h-5 w-5" />
+                  </>
+                )}
+              </button>
+            </form>
+          </motion.div>
         )}
 
         <div className="pt-8 text-xs text-neutral-400 uppercase tracking-widest">

@@ -4,7 +4,6 @@ import {
   Loader2,
   LogOut,
   MessageCircle,
-  Scissors,
   Users,
 } from "lucide-react";
 import { AnimatePresence, motion } from "motion/react";

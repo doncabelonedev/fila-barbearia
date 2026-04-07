@@ -8,6 +8,7 @@ import {
   Scissors,
   User,
   Users,
+  X,
 } from "lucide-react";
 import { AnimatePresence, motion } from "motion/react";
 import React, { useState } from "react";
@@ -295,6 +296,18 @@ export default function Home() {
                   className="h-14 w-full rounded-2xl border border-neutral-200 bg-white px-12 text-lg shadow-sm transition-all focus:border-emerald-500 focus:ring-4 focus:ring-emerald-100 outline-none dark:bg-neutral-900 dark:border-neutral-800 dark:text-white dark:focus:border-emerald-500 dark:focus:ring-emerald-900/30 disabled"
                   required
                 />
+                {phone && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setPhone("");
+                      setStep("phone");
+                    }}
+                    className="absolute right-4 top-1/2 -translate-y-1/2 text-neutral-400 transition-colors hover:text-neutral-600 dark:hover:text-neutral-300"
+                  >
+                    <X className="h-7 w-7" />
+                  </button>
+                )}
               </div>
             </div>
             <AnimatePresence>

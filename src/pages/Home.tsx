@@ -1,5 +1,6 @@
 import {
   AlertTriangle,
+  ArrowDown,
   ArrowRight,
   CheckCircle2,
   Clock,
@@ -364,9 +365,12 @@ export default function Home() {
                       <p className="text-sm text-amber-800 dark:text-amber-400 font-medium">
                         Atenção: Você ainda não está na fila.
                       </p>
-                      <p className="text-sm text-amber-800 dark:text-amber-400 font-medium">
-                        Confirme abaixo.
-                      </p>
+                      <div className="flex gap-4 text-center items-center justify-center">
+                        <p className="text-sm text-amber-800 dark:text-amber-400 font-medium">
+                          Confirme abaixo.
+                        </p>
+                        <ArrowDown className="text-sm text-amber-800 dark:text-amber-400 font-medium" />
+                      </div>
                     </div>
                   </div>
                 </motion.div>

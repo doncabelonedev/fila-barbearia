@@ -61,8 +61,6 @@ export default function InService() {
     const clearSession = () => {
       localStorage.removeItem("barber_queue_id");
       localStorage.removeItem("barber_queue_code");
-      localStorage.removeItem("barber_customer_id");
-      localStorage.removeItem("barber_customer_phone");
       navigate("/");
     };
 

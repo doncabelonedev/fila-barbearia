@@ -60,8 +60,6 @@ export default function QueueStatus() {
         );
         localStorage.removeItem("barber_queue_id");
         localStorage.removeItem("barber_queue_code");
-        localStorage.removeItem("barber_customer_id");
-        localStorage.removeItem("barber_customer_phone");
         navigate("/");
         return;
       }
@@ -129,8 +127,6 @@ export default function QueueStatus() {
 
       localStorage.removeItem("barber_queue_id");
       localStorage.removeItem("barber_queue_code");
-      localStorage.removeItem("barber_customer_id");
-      localStorage.removeItem("barber_customer_phone");
       navigate("/");
     } catch (error) {
       console.error(error);

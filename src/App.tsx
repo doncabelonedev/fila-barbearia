@@ -47,8 +47,6 @@ function SessionManager({ children }: { children: React.ReactNode }) {
         // Se o registro não existir mais, limpa a sessão
         localStorage.removeItem("barber_queue_id");
         localStorage.removeItem("barber_queue_code");
-        localStorage.removeItem("barber_customer_id");
-        localStorage.removeItem("barber_customer_phone");
         return;
       }
 
@@ -66,8 +64,6 @@ function SessionManager({ children }: { children: React.ReactNode }) {
         // Não força o redirecionamento para '/' se o usuário já estiver tentando entrar novamente
         localStorage.removeItem("barber_queue_id");
         localStorage.removeItem("barber_queue_code");
-        localStorage.removeItem("barber_customer_id");
-        localStorage.removeItem("barber_customer_phone");
 
         if (
           location.pathname === "/queue" ||

@@ -213,7 +213,7 @@ export default function QueueStatus() {
               </div>
 
               <AnimatePresence>
-                {position !== null && (
+                {position !== null && position <= 2 && (
                   <motion.div
                     initial={{ opacity: 0, scale: 0.9 }}
                     animate={{ opacity: 1, scale: 1 }}
@@ -222,7 +222,7 @@ export default function QueueStatus() {
                   >
                     <AlertTriangle className="h-6 w-6 shrink-0 text-amber-600 dark:text-amber-500" />
                     <div>
-                      <p className="font-bold text-amber-50">
+                      <p className="font-bold">
                         {position <= 1 && "Você é o proximo!"}
                         {position == 2 && "Sua vez está se aproximando!"}
                       </p>

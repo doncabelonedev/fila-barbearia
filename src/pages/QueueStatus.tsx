@@ -10,7 +10,7 @@ import { AnimatePresence, motion } from "motion/react";
 import { useEffect, useState } from "react";
 import toast from "react-hot-toast";
 import { useNavigate } from "react-router-dom";
-import { useAverageServiceTime } from "../hooks/useQueue";
+import { calculateEstimatedWaitTime } from "../hooks/useQueue";
 import { QueueItem, supabase } from "../lib/supabase";
 
 import { useShopSettings } from "../hooks/useShopSettings";
@@ -22,8 +22,7 @@ export default function QueueStatus() {
   const [loading, setLoading] = useState(true);
   const [showLeaveConfirm, setShowLeaveConfirm] = useState(false);
   const [whatsappNumber, setWhatsappNumber] = useState<string | null>(null);
-  const avgServiceTime = useAverageServiceTime();
-  const { shopName, logoUrl } = useShopSettings();
+  const { shopName, logoUrl, baseQueueTime } = useShopSettings();
 
   const queueId = localStorage.getItem("barber_queue_id");
 
@@ -145,10 +144,8 @@ export default function QueueStatus() {
     );
   }
 
-  const waitTime = position ? (position - 1) * avgServiceTime : 0;
-  const hours = Math.floor(waitTime / 60);
-  const mins = waitTime % 60;
-  const waitTimeStr = hours > 0 ? `${hours}h${mins}m` : `${mins}m`;
+  const peopleAhead = position ? position - 1 : 0;
+  const waitTimeStr = calculateEstimatedWaitTime(peopleAhead, baseQueueTime);
 
   return (
     <div className="flex flex-col items-center p-4 sm:p-8 bg-neutral-50 dark:bg-neutral-950">
@@ -191,7 +188,7 @@ export default function QueueStatus() {
             {}
             <div className="p-8 space-y-5">
               <div
-                className={`grid ${waitTime > 0 ? "grid-cols-2" : "grid-cols-1"} gap-4`}
+                className={`grid ${peopleAhead > 0 ? "grid-cols-2" : "grid-cols-1"} gap-4`}
               >
                 <div className="rounded-2xl bg-neutral-50 p-2 text-center border border-neutral-100 dark:bg-neutral-800 dark:border-neutral-700">
                   <Users className="mx-auto mb-2 h-6 w-6 text-emerald-600 dark:text-emerald-500" />
@@ -202,11 +199,11 @@ export default function QueueStatus() {
                     {position}
                   </p>
                 </div>
-                {waitTime > 0 && (
+                {peopleAhead > 0 && (
                   <div className="rounded-2xl bg-neutral-50 p-4 text-center border border-neutral-100 dark:bg-neutral-800 dark:border-neutral-700">
                     <Clock className="mx-auto mb-2 h-6 w-6 text-emerald-600 dark:text-emerald-500" />
                     <p className="text-xs font-semibold uppercase text-neutral-400 dark:text-neutral-500">
-                      {waitTime > 0 ? "Tempo de Espera" : "A qualquer momento"}
+                      Tempo de Espera
                     </p>
                     <p className="text-2xl font-bold text-neutral-900 dark:text-white">
                       {waitTimeStr}
@@ -261,13 +258,13 @@ export default function QueueStatus() {
                   <span
                     className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium capitalize
                                 ${
-                                  waitTime === 0
+                                  peopleAhead === 0
                                     ? "bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400"
                                     : "bg-emerald-100 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-400"
                                 }`}
                   >
                     {queueItem?.status === "waiting"
-                      ? waitTime === 0
+                      ? peopleAhead === 0
                         ? "Chamado em breve"
                         : "Aguardando"
                       : queueItem?.status === "serving"

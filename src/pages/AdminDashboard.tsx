@@ -25,7 +25,7 @@ import { AnimatePresence, motion } from "motion/react";
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import toast from "react-hot-toast";
 import { useNavigate } from "react-router-dom";
-import { useAverageServiceTime, useQueueCount } from "../hooks/useQueue";
+import { useQueueCount } from "../hooks/useQueue";
 import { QueueItem, supabase } from "../lib/supabase";
 
 import { useShopSettings } from "../hooks/useShopSettings";
@@ -52,8 +52,8 @@ export default function AdminDashboard() {
   const [manualStatus, setManualStatus] = useState<"auto" | "open" | "closed">(
     "auto",
   );
-  const avgServiceTime = useAverageServiceTime();
-  const { shopName, logoUrl, webhookUrl, trackingUrlBase } = useShopSettings();
+  const { shopName, logoUrl, webhookUrl, trackingUrlBase, baseQueueTime } =
+    useShopSettings();
 
   const adminPin = import.meta.env.VITE_ADMIN_PIN || "1234";
 
@@ -192,6 +192,7 @@ export default function AdminDashboard() {
           .filter((item) => item.status === "waiting")
           .sort((a, b) => a.position - b.position);
 
+        const currentBaseTime = baseQueueTime == null ? 30 : baseQueueTime;
         for (let index = 0; index < waitingItems.length; index++) {
           const item = waitingItems[index];
           const position = index + 1;
@@ -204,7 +205,7 @@ export default function AdminDashboard() {
               item,
               position,
               peopleAhead,
-              avgServiceTime,
+              currentBaseTime,
               shopName,
               webhookUrl,
               trackingUrlBase,
@@ -215,7 +216,7 @@ export default function AdminDashboard() {
               item,
               position,
               peopleAhead,
-              avgServiceTime,
+              currentBaseTime,
               shopName,
               webhookUrl,
               trackingUrlBase,
@@ -233,7 +234,7 @@ export default function AdminDashboard() {
   }, [
     queue,
     isAuthenticated,
-    avgServiceTime,
+    baseQueueTime,
     shopName,
     webhookUrl,
     trackingUrlBase,
@@ -570,10 +571,10 @@ export default function AdminDashboard() {
           </div>
           <div className="rounded-2xl bg-white p-4 shadow-sm border border-neutral-100 dark:bg-neutral-900 dark:border-neutral-800">
             <p className="text-xs font-bold uppercase text-neutral-400 dark:text-neutral-500">
-              Média de Atend.
+              Tempo Base
             </p>
             <p className="text-2xl font-black text-neutral-900 dark:text-white">
-              {avgServiceTime}m
+              {baseQueueTime == null ? 30 : baseQueueTime}m
             </p>
           </div>
           <div className="col-span-2 rounded-2xl bg-emerald-600 p-4 text-white shadow-lg shadow-emerald-100 dark:shadow-none">
@@ -835,8 +836,8 @@ function AddCustomerForm({
   const [loading, setLoading] = useState(false);
 
   const queueCount = useQueueCount();
-  const avgServiceTime = useAverageServiceTime();
-  const { shopName, webhookUrl, trackingUrlBase } = useShopSettings();
+  const { shopName, webhookUrl, trackingUrlBase, baseQueueTime } =
+    useShopSettings();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -897,12 +898,13 @@ function AddCustomerForm({
 
       // Send webhooks
       const peopleAhead = queueCount;
+      const currentBaseTime = baseQueueTime == null ? 30 : baseQueueTime;
       webhookService.sendWebhook(
         "JOINED",
         queueEntry,
         nextPos,
         peopleAhead,
-        avgServiceTime,
+        currentBaseTime,
         shopName,
         webhookUrl,
         trackingUrlBase,

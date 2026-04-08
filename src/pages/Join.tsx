@@ -10,7 +10,7 @@ import { motion } from "motion/react";
 import React, { useEffect, useState } from "react";
 import toast from "react-hot-toast";
 import { useLocation, useNavigate } from "react-router-dom";
-import { useAverageServiceTime, useQueueCount } from "../hooks/useQueue";
+import { useQueueCount, calculateEstimatedWaitTime } from "../hooks/useQueue";
 import { supabase } from "../lib/supabase";
 
 import { useShopSettings } from "../hooks/useShopSettings";
@@ -26,8 +26,8 @@ export default function Join() {
   const [checking, setChecking] = useState(true);
 
   const queueCount = useQueueCount();
-  const avgServiceTime = useAverageServiceTime();
-  const { shopName, logoUrl, webhookUrl, trackingUrlBase } = useShopSettings();
+  const { shopName, logoUrl, webhookUrl, trackingUrlBase, baseQueueTime } =
+    useShopSettings();
 
   useEffect(() => {
     if (!phone) {
@@ -194,7 +194,7 @@ export default function Join() {
         queueEntry,
         nextPosition,
         peopleAhead,
-        avgServiceTime,
+        baseQueueTime == null ? 30 : baseQueueTime,
         shopName,
         webhookUrl,
         trackingUrlBase,
@@ -261,9 +261,7 @@ export default function Join() {
               Espera Estimada
             </p>
             <p className="text-2xl font-black text-neutral-900 dark:text-white">
-              {queueCount * avgServiceTime > 0
-                ? `${Math.floor((queueCount * avgServiceTime) / 60) > 0 ? `${Math.floor((queueCount * avgServiceTime) / 60)}h` : ""}${(queueCount * avgServiceTime) % 60}m`
-                : "0m"}
+              {calculateEstimatedWaitTime(queueCount + 1, baseQueueTime)}
             </p>
           </div>
         </div>

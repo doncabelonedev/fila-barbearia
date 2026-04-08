@@ -13,9 +13,9 @@ import React, { useState } from "react";
 import toast from "react-hot-toast";
 import { useNavigate } from "react-router-dom";
 import {
-  useAverageServiceTime,
   useQueueCount,
   useShopStatus,
+  calculateEstimatedWaitTime,
 } from "../hooks/useQueue";
 import { supabase } from "../lib/supabase";
 
@@ -30,9 +30,9 @@ export default function Home() {
   const [loading, setLoading] = useState(false);
   const { isOpen, message, loading: statusLoading } = useShopStatus();
   const queueCount = useQueueCount();
-  const avgServiceTime = useAverageServiceTime();
   const navigate = useNavigate();
-  const { shopName, logoUrl, webhookUrl, trackingUrlBase } = useShopSettings();
+  const { shopName, logoUrl, webhookUrl, trackingUrlBase, baseQueueTime } =
+    useShopSettings();
 
   const handleJoinSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -159,7 +159,7 @@ export default function Home() {
         queueEntry,
         nextPosition,
         queueCount,
-        avgServiceTime,
+        baseQueueTime == null ? 30 : baseQueueTime,
         shopName,
         webhookUrl,
         trackingUrlBase,
@@ -315,9 +315,7 @@ export default function Home() {
                     Tempo estimado
                   </p>
                   <p className="text-2xl font-black text-neutral-900 dark:text-white">
-                    {queueCount * avgServiceTime > 0
-                      ? `${Math.floor((queueCount * avgServiceTime) / 60) > 0 ? `${Math.floor((queueCount * avgServiceTime) / 60)}h` : ""}${(queueCount * avgServiceTime) % 60}m`
-                      : "0m"}
+                    {calculateEstimatedWaitTime(queueCount, baseQueueTime)}
                   </p>
                 </div>
               </div>

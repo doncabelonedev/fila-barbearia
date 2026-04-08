@@ -14,6 +14,7 @@ interface ShopSettingsContextType {
   logoUrl: string | null;
   webhookUrl: string | null;
   trackingUrlBase: string | null;
+  baseQueueTime: number | null;
   setTheme: (theme: "light" | "dark") => void;
 }
 
@@ -52,6 +53,7 @@ export function useShopSettingsHook() {
     logoUrl: getInitialLogoUrl(),
     webhookUrl: null as string | null,
     trackingUrlBase: null as string | null,
+    baseQueueTime: null as number | null,
   });
 
   const setTheme = (theme: "light" | "dark") => {
@@ -63,7 +65,9 @@ export function useShopSettingsHook() {
     async function fetchSettings() {
       const { data } = await supabase
         .from("shop_settings")
-        .select("theme, shop_name, logo_url, webhook_url, tracking_url_base")
+        .select(
+          "theme, shop_name, logo_url, webhook_url, tracking_url_base, base_queue_time",
+        )
         .limit(1)
         .maybeSingle();
       if (data) {
@@ -82,6 +86,7 @@ export function useShopSettingsHook() {
           logoUrl: fetchedLogoUrl,
           webhookUrl: data.webhook_url,
           trackingUrlBase: data.tracking_url_base,
+          baseQueueTime: data.base_queue_time,
         });
       }
     }
@@ -110,6 +115,7 @@ export function useShopSettingsHook() {
               logoUrl: fetchedLogoUrl,
               webhookUrl: payload.new.webhook_url,
               trackingUrlBase: payload.new.tracking_url_base,
+              baseQueueTime: payload.new.base_queue_time,
             });
           }
         },
@@ -157,6 +163,7 @@ export function useShopSettings() {
       logoUrl: null as string | null,
       webhookUrl: null as string | null,
       trackingUrlBase: null as string | null,
+      baseQueueTime: null as number | null,
       setTheme: () => {},
     };
   }

@@ -2,6 +2,7 @@ import {
   ArrowLeft,
   Calendar,
   Clock,
+  Hourglass,
   Loader2,
   MessageCircle,
   Moon,
@@ -32,6 +33,7 @@ export default function AdminSettings() {
   const [logoUrl, setLogoUrl] = useState("");
   const [webhookUrl, setWebhookUrl] = useState("");
   const [trackingUrlBase, setTrackingUrlBase] = useState("");
+  const [baseQueueTime, setBaseQueueTime] = useState(30);
   const [isTestingWebhook, setIsTestingWebhook] = useState(false);
   const [webhookTestResult, setWebhookTestResult] = useState<{
     success: boolean;
@@ -64,7 +66,7 @@ export default function AdminSettings() {
       const { data: settings } = await supabase
         .from("shop_settings")
         .select(
-          "whatsapp_number, theme, shop_name, logo_url, webhook_url, tracking_url_base",
+          "whatsapp_number, theme, shop_name, logo_url, webhook_url, tracking_url_base, base_queue_time",
         )
         .limit(1)
         .maybeSingle();
@@ -88,6 +90,9 @@ export default function AdminSettings() {
       }
       if (settings?.tracking_url_base) {
         setTrackingUrlBase(settings.tracking_url_base);
+      }
+      if (settings?.base_queue_time != null) {
+        setBaseQueueTime(settings.base_queue_time);
       }
 
       setLoading(false);
@@ -128,6 +133,7 @@ export default function AdminSettings() {
             logo_url: logoUrl || null,
             webhook_url: webhookUrl || null,
             tracking_url_base: trackingUrlBase || null,
+            base_queue_time: baseQueueTime,
           })
           .eq("id", current.id);
       } else {
@@ -140,6 +146,7 @@ export default function AdminSettings() {
             logo_url: logoUrl || null,
             webhook_url: webhookUrl || null,
             tracking_url_base: trackingUrlBase || null,
+            base_queue_time: baseQueueTime,
           },
         ]);
       }
@@ -488,6 +495,34 @@ export default function AdminSettings() {
               />
               <p className="mt-2 text-xs text-neutral-400 dark:text-neutral-500">
                 URL exata enviada no webhook para o cliente acompanhar a fila.
+              </p>
+            </div>
+          </div>
+        </section>
+
+        <section className="space-y-4">
+          <div className="flex items-center space-x-2">
+            <Hourglass className="h-6 w-6 text-emerald-600" />
+            <h2 className="text-xl font-bold text-neutral-900 dark:text-white">
+              Configurações de Atendimento
+            </h2>
+          </div>
+          <div className="rounded-2xl bg-white p-6 shadow-sm border border-neutral-100 space-y-4 dark:bg-neutral-900 dark:border-neutral-800">
+            <div>
+              <label className="block text-sm font-bold text-neutral-700 mb-1 dark:text-neutral-300">
+                Tempo Médio de Atendimento (minutos)
+              </label>
+              <input
+                type="number"
+                value={baseQueueTime}
+                onChange={(e) =>
+                  setBaseQueueTime(parseInt(e.target.value) || 30)
+                }
+                className="w-full rounded-xl border border-neutral-200 bg-neutral-50 px-4 py-3 text-lg outline-none focus:border-emerald-500 transition-all dark:bg-neutral-800 dark:border-neutral-700 dark:text-white dark:focus:border-emerald-500"
+              />
+              <p className="mt-2 text-xs text-neutral-400 dark:text-neutral-500">
+                Este tempo será usado para calcular as estimativas de espera
+                para os clientes na fila.
               </p>
             </div>
           </div>

@@ -180,12 +180,6 @@ export function calculateEstimatedWaitTime(
   posicaoNaFila: number,
   baseQueueTime: number | null,
 ): string {
-  console.log(
-    "Calculating wait time for position:",
-    posicaoNaFila,
-    "with base time:",
-    baseQueueTime,
-  );
   if (posicaoNaFila <= 0) return "0 min";
   const tempoBase = baseQueueTime == null ? 30 : baseQueueTime;
   const tempoEstimado = posicaoNaFila * tempoBase;

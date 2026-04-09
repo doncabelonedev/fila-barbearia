@@ -201,8 +201,19 @@ export default function AdminDashboard() {
           const position = index + 1 + servingCount;
           const peopleAhead = position - 1;
 
+          // Verifica quanto tempo o cliente está na fila (em milissegundos)
+          const timeInQueue = Date.now() - new Date(item.created_at).getTime();
+          // Se o cliente acabou de entrar (menos de 1 minuto), não envia NEXT ou NEAR
+          // pois ele acabou de receber a notificação de JOINED
+          if (timeInQueue < 60000) {
+            console.log("Entrou ha menos de 1 minuto");
+            continue;
+          }
+
+          console.log("pessoas a frente " + peopleAhead);
+
           let sent = false;
-          if (peopleAhead <= 1) {
+          if (peopleAhead === 0) {
             sent = await webhookService.sendWebhook(
               "NEXT",
               item,

@@ -126,7 +126,7 @@ class WebhookService {
       }
 
       const tempoEstimado = peopleAhead * baseTime; // Mantido para caso você ainda queira os minutos no n8n
-      const estimatedWait = calculateEstimatedServiceTime(peopleAhead);
+      const estimatedWait = calculateEstimatedServiceTime(peopleAhead + 1);
 
       const payload: WebhookPayload = {
         type: "QUEUE_UPDATE",

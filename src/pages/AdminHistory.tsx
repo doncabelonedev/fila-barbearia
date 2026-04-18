@@ -10,6 +10,8 @@ import {
   ArrowLeft,
   Calendar,
   CheckCircle2,
+  ChevronLeft,
+  ChevronRight,
   Clock,
   Filter,
   History,
@@ -46,6 +48,13 @@ export default function AdminHistory() {
   const [statusFilter, setStatusFilter] = useState<
     "all" | "completed" | "cancelled"
   >("all");
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 10;
+
+  // Volta para a primeira página sempre que os filtros mudarem
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchTerm, startDate, endDate, statusFilter]);
 
   useEffect(() => {
     const auth = sessionStorage.getItem("barber_admin_auth");
@@ -119,6 +128,13 @@ export default function AdminHistory() {
       avgDuration,
     };
   }, [filteredHistory]);
+
+  const paginatedHistory = useMemo(() => {
+    const startIndex = (currentPage - 1) * itemsPerPage;
+    return filteredHistory.slice(startIndex, startIndex + itemsPerPage);
+  }, [filteredHistory, currentPage]);
+
+  const totalPages = Math.ceil(filteredHistory.length / itemsPerPage);
 
   if (loading && history.length === 0) {
     return (
@@ -275,7 +291,7 @@ export default function AdminHistory() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-neutral-800">
-                {filteredHistory.map((item) => {
+                {paginatedHistory.map((item) => {
                   let duration = "-";
                   if (item.service_start && item.service_end) {
                     const start = new Date(item.service_start);
@@ -339,6 +355,51 @@ export default function AdminHistory() {
             </div>
           )}
         </div>
+
+        {/* Pagination Controls */}
+        {totalPages > 1 && (
+          <div className="flex flex-col sm:flex-row items-center justify-between rounded-3xl bg-neutral-900 p-4 shadow-sm border border-neutral-800 gap-4">
+            <p className="text-sm text-neutral-400">
+              Mostrando{" "}
+              <span className="font-bold text-white">
+                {(currentPage - 1) * itemsPerPage + 1}
+              </span>{" "}
+              a{" "}
+              <span className="font-bold text-white">
+                {Math.min(currentPage * itemsPerPage, filteredHistory.length)}
+              </span>{" "}
+              de{" "}
+              <span className="font-bold text-white">
+                {filteredHistory.length}
+              </span>{" "}
+              registros
+            </p>
+
+            <div className="flex items-center space-x-3 w-full sm:w-auto justify-between">
+              <button
+                onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+                disabled={currentPage === 1}
+                className="flex items-center rounded-xl bg-neutral-800 px-3 py-2 text-sm font-bold text-neutral-300 transition-all hover:bg-neutral-700 disabled:opacity-50"
+              >
+                <ChevronLeft className="mr-1 h-4 w-4" />
+                Anterior
+              </button>
+              <span className="text-sm font-bold text-neutral-400">
+                {currentPage} / {totalPages}
+              </span>
+              <button
+                onClick={() =>
+                  setCurrentPage((p) => Math.min(totalPages, p + 1))
+                }
+                disabled={currentPage === totalPages}
+                className="flex items-center rounded-xl bg-emerald-600 px-3 py-2 text-sm font-bold text-white transition-all hover:bg-emerald-700 disabled:opacity-50"
+              >
+                Próxima
+                <ChevronRight className="ml-1 h-4 w-4" />
+              </button>
+            </div>
+          </div>
+        )}
       </main>
     </div>
   );

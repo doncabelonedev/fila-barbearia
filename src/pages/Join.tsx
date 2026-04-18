@@ -219,14 +219,14 @@ export default function Join() {
 
   if (checking) {
     return (
-      <div className="flex min-h-screen items-center justify-center">
+      <div className="flex min-h-screen items-center justify-center bg-neutral-950">
         <Loader2 className="h-8 w-8 animate-spin text-emerald-600" />
       </div>
     );
   }
 
   return (
-    <div className="flex min-h-screen flex-col items-center justify-center p-4 sm:p-8 bg-neutral-50 dark:bg-neutral-950">
+    <div className="flex min-h-screen flex-col items-center justify-center p-4 sm:p-8 bg-neutral-950">
       <motion.div
         initial={{ opacity: 0, scale: 0.95 }}
         animate={{ opacity: 1, scale: 1 }}
@@ -234,37 +234,33 @@ export default function Join() {
       >
         <button
           onClick={() => navigate("/")}
-          className="flex items-center text-neutral-500 hover:text-neutral-800 transition-colors dark:text-neutral-400 dark:hover:text-neutral-200"
+          className="flex items-center text-neutral-400 transition-colors hover:text-neutral-200"
         >
           <ArrowLeft className="mr-2 h-4 w-4" />
           Voltar
         </button>
 
         <div className="space-y-2 text-center">
-          <h1 className="text-3xl font-bold text-neutral-900 dark:text-white">
-            Quase lá!
-          </h1>
-          <p className="text-neutral-500 dark:text-neutral-400">
+          <h1 className="text-3xl font-bold text-white">Quase lá!</h1>
+          <p className="text-neutral-400">
             Confirme seus dados para entrar na fila.
           </p>
         </div>
 
         <div className="grid grid-cols-2 gap-3">
-          <div className="rounded-xl bg-white p-4 text-center border border-neutral-200 shadow-sm dark:bg-neutral-900 dark:border-neutral-800">
+          <div className="rounded-xl bg-neutral-900 p-4 text-center border border-neutral-800 shadow-sm">
             <Users className="mx-auto mb-2 h-6 w-6 text-emerald-600" />
-            <p className="text-xs font-bold uppercase text-neutral-500 dark:text-neutral-500">
+            <p className="text-xs font-bold uppercase text-neutral-500">
               Sua Posição
             </p>
-            <p className="text-2xl font-black text-neutral-900 dark:text-white">
-              {queueCount + 1}º
-            </p>
+            <p className="text-2xl font-black text-white">{queueCount + 1}º</p>
           </div>
-          <div className="rounded-xl bg-white p-4 text-center border border-neutral-200 shadow-sm dark:bg-neutral-900 dark:border-neutral-800">
+          <div className="rounded-xl bg-neutral-900 p-4 text-center border border-neutral-800 shadow-sm">
             <Clock className="mx-auto mb-2 h-6 w-6 text-emerald-600" />
-            <p className="text-xs font-bold uppercase text-neutral-500 dark:text-neutral-500">
+            <p className="text-xs font-bold uppercase text-neutral-500">
               Horário Estimado
             </p>
-            <p className="text-2xl font-black text-neutral-900 dark:text-white">
+            <p className="text-2xl font-black text-white">
               {calculateEstimatedServiceTime(queueCount + 1)}
             </p>
           </div>
@@ -272,20 +268,20 @@ export default function Join() {
 
         <form
           onSubmit={handleJoin}
-          className="space-y-6 rounded-3xl bg-white p-8 shadow-xl shadow-neutral-200/50 dark:bg-neutral-900 dark:shadow-none dark:border dark:border-neutral-800"
+          className="space-y-6 rounded-3xl bg-neutral-900 p-8 shadow-none border border-neutral-800"
         >
           <div className="space-y-4">
             <div>
-              <label className="mb-2 block text-sm font-semibold text-neutral-700 dark:text-neutral-300">
+              <label className="mb-2 block text-sm font-semibold text-neutral-300">
                 Número de Telefone
               </label>
-              <div className="rounded-xl bg-neutral-50 p-4 text-neutral-500 border border-neutral-100 dark:bg-neutral-800 dark:text-neutral-400 dark:border-neutral-700">
+              <div className="rounded-xl bg-neutral-800 p-4 text-neutral-400 border border-neutral-700">
                 {phone}
               </div>
             </div>
 
             <div>
-              <label className="mb-2 block text-sm font-semibold text-neutral-700 dark:text-neutral-300">
+              <label className="mb-2 block text-sm font-semibold text-neutral-300">
                 Seu Nome
               </label>
               <div className="relative">
@@ -295,7 +291,7 @@ export default function Join() {
                   placeholder="Digite seu nome completo"
                   value={name}
                   onChange={(e) => setName(e.target.value)}
-                  className="h-14 w-full rounded-xl border border-neutral-200 bg-white px-12 text-lg shadow-sm transition-all focus:border-emerald-500 focus:ring-4 focus:ring-emerald-100 outline-none dark:bg-neutral-800 dark:border-neutral-700 dark:text-white dark:focus:ring-emerald-900/20"
+                  className="h-14 w-full rounded-xl border border-neutral-700 bg-neutral-800 px-12 text-lg text-white shadow-sm transition-all focus:border-emerald-500 focus:ring-4 focus:ring-emerald-900/20 outline-none"
                   required
                 />
               </div>
@@ -305,7 +301,7 @@ export default function Join() {
           <button
             type="submit"
             disabled={loading}
-            className="flex h-14 w-full items-center justify-center rounded-xl bg-emerald-600 text-lg font-semibold text-white shadow-lg shadow-emerald-200 transition-all hover:bg-emerald-700 active:scale-[0.98] disabled:opacity-70 dark:shadow-none"
+            className="flex h-14 w-full items-center justify-center rounded-xl bg-emerald-600 text-lg font-semibold text-white shadow-none transition-all hover:bg-emerald-700 active:scale-[0.98] disabled:opacity-70"
           >
             {loading ? (
               <Loader2 className="h-6 w-6 animate-spin" />

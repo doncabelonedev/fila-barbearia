@@ -16,7 +16,7 @@ import AdminDashboard from "./pages/AdminDashboard";
 import AdminSettings from "./pages/AdminSettings";
 import AdminHistory from "./pages/AdminHistory";
 import { Toaster } from "react-hot-toast";
-import { ShopSettingsProvider, useShopSettings } from "./hooks/useShopSettings";
+import { ShopSettingsProvider } from "./hooks/useShopSettings";
 
 // Componente para gerenciar a sessão global e redirecionamentos automáticos
 function SessionManager({ children }: { children: React.ReactNode }) {
@@ -81,18 +81,10 @@ function SessionManager({ children }: { children: React.ReactNode }) {
 }
 
 function AppContent() {
-  const { theme } = useShopSettings();
-
   return (
     <Router>
       <SessionManager>
-        <div
-          className={`min-h-screen font-sans transition-colors duration-300 ${
-            theme === "dark"
-              ? "bg-neutral-950 text-neutral-50"
-              : "bg-neutral-50 text-neutral-900"
-          }`}
-        >
+        <div className="min-h-screen font-sans transition-colors duration-300 bg-neutral-950 text-neutral-50">
           <Routes>
             <Route path="/" element={<Home />} />
             <Route path="/join" element={<Join />} />

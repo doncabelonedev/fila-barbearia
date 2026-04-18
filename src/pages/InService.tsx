@@ -91,9 +91,9 @@ export default function InService() {
 
   if (loading) {
     return (
-      <div className="flex min-h-screen flex-col items-center justify-center space-y-4">
+      <div className="flex min-h-screen flex-col items-center justify-center space-y-4 bg-neutral-950">
         <Loader2 className="h-8 w-8 animate-spin text-emerald-600" />
-        <p className="text-neutral-500 font-medium dark:text-neutral-400">
+        <p className="text-neutral-400 font-medium">
           Carregando seu atendimento...
         </p>
       </div>
@@ -101,7 +101,7 @@ export default function InService() {
   }
 
   return (
-    <div className="flex min-h-screen flex-col items-center justify-center p-4 sm:p-8 bg-neutral-50 dark:bg-neutral-950">
+    <div className="flex min-h-screen flex-col items-center justify-center p-4 sm:p-8 bg-neutral-950">
       <motion.div
         initial={{ opacity: 0, scale: 0.9 }}
         animate={{ opacity: 1, scale: 1 }}
@@ -112,7 +112,7 @@ export default function InService() {
             className={`overflow-hidden transition-all duration-500 ${
               logoUrl
                 ? "h-32 w-32 rounded-3xl"
-                : "rounded-full bg-emerald-100 p-6 dark:bg-emerald-900/30"
+                : "rounded-full bg-emerald-900/30 p-6"
             }`}
           >
             {logoUrl ? (
@@ -123,50 +123,50 @@ export default function InService() {
                 referrerPolicy="no-referrer"
               />
             ) : (
-              <Scissors className="h-12 w-12 text-emerald-600 animate-pulse dark:text-emerald-500" />
+              <Scissors className="h-12 w-12 text-emerald-500 animate-pulse" />
             )}
           </div>
-          <h1 className="text-3xl font-black text-neutral-900 tracking-tight dark:text-white">
+          <h1 className="text-3xl font-black text-white tracking-tight">
             Você está em atendimento!
           </h1>
-          <p className="text-neutral-500 text-lg dark:text-neutral-400">
+          <p className="text-neutral-400 text-lg">
             O barbeiro já está cuidando do seu visual. Por favor, aguarde até
             que o corte seja finalizado.
           </p>
         </div>
 
-        <div className="rounded-3xl bg-white p-8 shadow-xl shadow-neutral-200/50 border border-neutral-100 dark:bg-neutral-900 dark:border-neutral-800 dark:shadow-none">
+        <div className="rounded-3xl bg-neutral-900 p-8 border border-neutral-800 shadow-none">
           <div className="space-y-6">
             <div className="flex items-center justify-center space-x-2">
               <CheckCircle2 className="h-5 w-5 text-emerald-500" />
-              <span className="font-bold text-neutral-900 uppercase tracking-widest text-sm dark:text-white">
+              <span className="font-bold text-white uppercase tracking-widest text-sm">
                 Status: Em Serviço
               </span>
             </div>
 
-            <div className="h-px bg-neutral-100 w-full dark:bg-neutral-800" />
+            <div className="h-px bg-neutral-800 w-full" />
 
             <div className="space-y-1">
-              <p className="text-xs font-semibold text-neutral-400 uppercase dark:text-neutral-500">
+              <p className="text-xs font-semibold text-neutral-500 uppercase">
                 Código
               </p>
-              <p className="text-4xl font-black text-neutral-900 dark:text-white">
+              <p className="text-4xl font-black text-white">
                 {queueItem?.code}
               </p>
             </div>
 
             <div className="space-y-1">
-              <p className="text-xs font-semibold text-neutral-400 uppercase dark:text-neutral-500">
+              <p className="text-xs font-semibold text-neutral-500 uppercase">
                 Cliente
               </p>
-              <p className="text-xl font-bold text-neutral-900 dark:text-white">
+              <p className="text-xl font-bold text-white">
                 {queueItem?.customer?.name}
               </p>
             </div>
           </div>
         </div>
 
-        <p className="text-sm text-neutral-400 dark:text-neutral-500">
+        <p className="text-sm text-neutral-500">
           Esta página será fechada automaticamente assim que o barbeiro
           finalizar o serviço.
         </p>

@@ -194,14 +194,14 @@ export default function Home() {
 
   if (statusLoading) {
     return (
-      <div className="flex min-h-screen items-center justify-center">
+      <div className="flex min-h-screen items-center justify-center bg-neutral-950">
         <Loader2 className="h-8 w-8 animate-spin text-emerald-600" />
       </div>
     );
   }
 
   return (
-    <div className="flex min-h-screen flex-col items-center justify-center p-4 sm:p-8 bg-neutral-50 dark:bg-neutral-950">
+    <div className="flex min-h-screen flex-col items-center justify-center p-4 sm:p-8 bg-neutral-950">
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
@@ -212,7 +212,7 @@ export default function Home() {
             className={`overflow-hidden transition-all duration-500 ${
               logoUrl
                 ? "h-32 w-32 rounded-3xl"
-                : "rounded-2xl bg-emerald-600 p-4 shadow-lg shadow-emerald-200 dark:shadow-none"
+                : "rounded-2xl bg-emerald-600 p-4 shadow-none"
             }`}
           >
             {logoUrl ? (
@@ -226,16 +226,16 @@ export default function Home() {
               <Scissors className="h-10 w-10 text-white" />
             )}
           </div>
-          <h1 className="text-4xl font-bold tracking-tight text-neutral-900 dark:text-white">
+          <h1 className="text-4xl font-bold tracking-tight text-white">
             {shopName}
           </h1>
-          <p className="text-neutral-500 italic dark:text-neutral-400">
+          <p className="text-neutral-400 italic">
             A maneira mais inteligente de esperar pelo seu corte.
           </p>
         </div>
 
         {!isOpen ? (
-          <div className="rounded-2xl border border-amber-200 bg-amber-50 p-6 text-amber-800 shadow-sm dark:bg-amber-900/20 dark:border-amber-900/30 dark:text-amber-400">
+          <div className="rounded-2xl bg-amber-900/20 p-6 text-amber-400 shadow-sm border border-amber-900/30">
             <p className="font-medium">A barbearia está fechada no momento.</p>
             <p className="mt-1 text-sm opacity-90">{message}</p>
           </div>
@@ -243,7 +243,7 @@ export default function Home() {
           <form onSubmit={handleJoinSubmit} className="space-y-4">
             <div className="space-y-6 text-left">
               <div className="pt-2">
-                <label className="mb-2 block text-sm font-semibold text-neutral-700 dark:text-neutral-300">
+                <label className="mb-2 block text-sm font-semibold text-neutral-300">
                   Seu Nome
                 </label>
                 <div className="relative">
@@ -253,7 +253,7 @@ export default function Home() {
                     placeholder="Digite seu nome completo"
                     value={name}
                     onChange={(e) => setName(e.target.value)}
-                    className="h-14 w-full rounded-xl border border-neutral-200 bg-white px-12 text-lg shadow-sm transition-all focus:border-emerald-500 focus:ring-4 focus:ring-emerald-100 outline-none dark:bg-neutral-900 dark:border-neutral-800 dark:text-white dark:focus:border-emerald-500 dark:focus:ring-emerald-900/30"
+                    className="h-14 w-full rounded-xl border border-neutral-800 bg-neutral-900 px-12 text-lg text-white shadow-sm transition-all focus:border-emerald-500 focus:ring-4 focus:ring-emerald-900/30 outline-none"
                     required
                   />
                 </div>
@@ -267,7 +267,7 @@ export default function Home() {
                   onChange={(e) => {
                     setDdd(e.target.value);
                   }}
-                  className="h-14 w-full appearance-none rounded-2xl border border-neutral-200 bg-white px-4 text-lg shadow-sm transition-all focus:border-emerald-500 focus:ring-4 focus:ring-emerald-100 outline-none dark:bg-neutral-900 dark:border-neutral-800 dark:text-white dark:focus:border-emerald-500 dark:focus:ring-emerald-900/30"
+                  className="h-14 w-full appearance-none rounded-2xl border border-neutral-800 bg-neutral-900 px-4 text-lg text-white shadow-sm transition-all focus:border-emerald-500 focus:ring-4 focus:ring-emerald-900/30 outline-none"
                 >
                   {DDD_OPTIONS.map((code) => (
                     <option key={code} value={code}>
@@ -295,7 +295,7 @@ export default function Home() {
                       setPhone(val);
                     }
                   }}
-                  className="h-14 w-full rounded-2xl border border-neutral-200 bg-white px-12 text-lg shadow-sm transition-all focus:border-emerald-500 focus:ring-4 focus:ring-emerald-100 outline-none dark:bg-neutral-900 dark:border-neutral-800 dark:text-white dark:focus:border-emerald-500 dark:focus:ring-emerald-900/30 disabled"
+                  className="h-14 w-full rounded-2xl border border-neutral-800 bg-neutral-900 px-12 text-lg text-white shadow-sm transition-all focus:border-emerald-500 focus:ring-4 focus:ring-emerald-900/30 outline-none disabled"
                   required
                 />
                 {phone && (
@@ -304,7 +304,7 @@ export default function Home() {
                     onClick={() => {
                       setPhone("");
                     }}
-                    className="absolute right-4 top-1/2 -translate-y-1/2 text-neutral-400 transition-colors hover:text-neutral-600 dark:hover:text-neutral-300"
+                    className="absolute right-4 top-1/2 -translate-y-1/2 text-neutral-400 transition-colors hover:text-neutral-300"
                   >
                     <X className="h-7 w-7" />
                   </button>
@@ -312,7 +312,7 @@ export default function Home() {
               </div>
             </div>
 
-            <div className="flex items-center justify-center gap-2 rounded-full px-3 py-4 text-sm bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400">
+            <div className="flex items-center justify-center gap-2 rounded-full px-3 py-4 text-sm bg-yellow-900/30 text-yellow-400">
               <CircleAlert className="text-sm" /> Você ainda não está na fila.
               Veja a estimativa:
               <ArrowDown className="text-sm" />
@@ -320,21 +320,21 @@ export default function Home() {
 
             <div className="space-y-6 text-left">
               <div className="grid grid-cols-2 gap-3">
-                <div className="rounded-xl bg-white p-4 text-center border border-neutral-200 shadow-sm dark:bg-neutral-900 dark:border-neutral-800">
+                <div className="rounded-xl bg-neutral-900 p-4 text-center border border-neutral-800 shadow-sm">
                   <Users className="mx-auto mb-2 h-6 w-6 text-emerald-600" />
-                  <p className="text-xs font-bold uppercase text-neutral-500 dark:text-yellow-400">
+                  <p className="text-xs font-bold uppercase text-yellow-400">
                     Sua posição estimada
                   </p>
-                  <p className="text-xl font-black text-neutral-900 dark:text-white mt-2">
+                  <p className="text-xl font-black text-white mt-2">
                     {queueCount + 1}º
                   </p>
                 </div>
-                <div className="rounded-xl bg-white p-4 text-center border border-neutral-200 shadow-sm dark:bg-neutral-900 dark:border-neutral-800">
+                <div className="rounded-xl bg-neutral-900 p-4 text-center border border-neutral-800 shadow-sm">
                   <Clock className="mx-auto mb-2 h-6 w-6 text-emerald-600" />
-                  <p className="text-xs font-bold uppercase text-neutral-500 dark:text-yellow-400">
+                  <p className="text-xs font-bold uppercase text-yellow-400">
                     Horário estimado
                   </p>
-                  <p className="text-xl font-black text-neutral-900 dark:text-white mt-2">
+                  <p className="text-xl font-black text-white mt-2">
                     {calculateEstimatedServiceTime(queueCount + 1)}
                   </p>
                 </div>
@@ -344,7 +344,7 @@ export default function Home() {
             <button
               type="submit"
               disabled={loading}
-              className="mt-4 group relative flex h-14 w-full items-center justify-center rounded-2xl text-lg font-semibold text-white shadow-lg transition-all active:scale-[0.98] disabled:opacity-70 bg-emerald-600 hover:bg-emerald-700 shadow-emerald-200 dark:shadow-none"
+              className="mt-4 group relative flex h-14 w-full items-center justify-center rounded-2xl text-lg font-semibold text-white shadow-none transition-all active:scale-[0.98] disabled:opacity-70 bg-emerald-600 hover:bg-emerald-700"
             >
               {loading ? (
                 <Loader2 className="h-6 w-6 animate-spin" />

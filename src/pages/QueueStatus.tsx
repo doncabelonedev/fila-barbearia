@@ -136,9 +136,9 @@ export default function QueueStatus() {
 
   if (loading) {
     return (
-      <div className="flex min-h-screen flex-col items-center justify-center space-y-4">
+      <div className="flex min-h-screen flex-col items-center justify-center space-y-4 bg-neutral-950">
         <Loader2 className="h-8 w-8 animate-spin text-emerald-600" />
-        <p className="text-neutral-500 animate-pulse font-medium dark:text-neutral-400">
+        <p className="text-neutral-400 animate-pulse font-medium">
           Atualizando seu status...
         </p>
       </div>
@@ -149,7 +149,7 @@ export default function QueueStatus() {
   const estimatedTimeStr = calculateEstimatedServiceTime(peopleAhead + 1);
 
   return (
-    <div className="flex flex-col items-center p-4 sm:p-8 bg-neutral-50 dark:bg-neutral-950">
+    <div className="flex flex-col items-center p-4 sm:p-8 bg-neutral-950 min-h-screen">
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
@@ -167,8 +167,8 @@ export default function QueueStatus() {
             className="absolute inset-[-200%] z-0"
           />
 
-          <div className="relative z-10 overflow-hidden rounded-[2rem] bg-white dark:bg-neutral-900">
-            <div className="bg-neutral-900 p-4 text-center text-white relative dark:bg-black">
+          <div className="relative z-10 overflow-hidden rounded-[2rem] bg-neutral-900">
+            <div className="bg-black p-4 text-center text-white relative">
               <div className="absolute top-4 right-4 flex items-center space-x-2">
                 <motion.div
                   animate={{ opacity: [1, 0.5, 1] }}
@@ -191,22 +191,22 @@ export default function QueueStatus() {
               <div
                 className={`grid ${peopleAhead > 0 ? "grid-cols-2" : "grid-cols-1"} gap-4`}
               >
-                <div className="rounded-2xl bg-neutral-50 p-2 text-center border border-neutral-100 dark:bg-neutral-800 dark:border-neutral-700">
-                  <Users className="mx-auto mb-2 h-6 w-6 text-emerald-600 dark:text-emerald-500" />
-                  <p className="text-xs font-semibold uppercase text-neutral-400 dark:text-neutral-500">
+                <div className="rounded-2xl bg-neutral-800 p-2 text-center border border-neutral-700">
+                  <Users className="mx-auto mb-2 h-6 w-6 text-emerald-500" />
+                  <p className="text-xs font-semibold uppercase text-neutral-500">
                     Posição
                   </p>
-                  <p className="text-xl font-bold text-neutral-900 dark:text-white mt-2">
+                  <p className="text-xl font-bold text-white mt-2">
                     {position}
                   </p>
                 </div>
                 {peopleAhead > 0 && (
-                  <div className="rounded-2xl bg-neutral-50 p-4 text-center border border-neutral-100 dark:bg-neutral-800 dark:border-neutral-700">
-                    <Clock className="mx-auto mb-2 h-6 w-6 text-emerald-600 dark:text-emerald-500" />
-                    <p className="text-xs font-semibold uppercase text-neutral-400 dark:text-neutral-500">
+                  <div className="rounded-2xl bg-neutral-800 p-4 text-center border border-neutral-700">
+                    <Clock className="mx-auto mb-2 h-6 w-6 text-emerald-500" />
+                    <p className="text-xs font-semibold uppercase text-neutral-500">
                       Horário Estimado
                     </p>
-                    <p className="text-xl font-bold text-neutral-900 dark:text-white mt-2">
+                    <p className="text-xl font-bold text-white mt-2">
                       {estimatedTimeStr}
                     </p>
                   </div>
@@ -219,9 +219,9 @@ export default function QueueStatus() {
                     initial={{ opacity: 0, scale: 0.9 }}
                     animate={{ opacity: 1, scale: 1 }}
                     exit={{ opacity: 0, scale: 0.9 }}
-                    className="flex items-start space-x-3 rounded-2xl bg-amber-50 p-4 text-amber-800 border border-amber-100 dark:bg-amber-900/20 dark:border-amber-900/30 dark:text-amber-400"
+                    className="flex items-start space-x-3 rounded-2xl bg-amber-900/20 p-4 text-amber-400 border border-amber-900/30"
                   >
-                    <AlertTriangle className="h-6 w-6 shrink-0 text-amber-600 dark:text-amber-500" />
+                    <AlertTriangle className="h-6 w-6 shrink-0 text-amber-500" />
                     <div>
                       <p className="font-bold">
                         {position <= 2 && "Você é o proximo!"}
@@ -244,7 +244,7 @@ export default function QueueStatus() {
                     href={`https://wa.me/${whatsappNumber.replace(/\D/g, "")}`}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="flex w-full items-center justify-center rounded-2xl bg-emerald-500 p-4 font-bold text-white shadow-lg shadow-emerald-100 transition-all hover:bg-emerald-600 active:scale-95 dark:shadow-none"
+                    className="flex w-full items-center justify-center rounded-2xl bg-emerald-500 p-4 font-bold text-white shadow-none transition-all hover:bg-emerald-600 active:scale-95"
                   >
                     <MessageCircle className="mr-2 h-5 w-5" />
                     Dúvidas? Chame no WhatsApp
@@ -252,16 +252,14 @@ export default function QueueStatus() {
                 )}
 
                 <div className="flex items-center justify-between text-sm">
-                  <span className="text-neutral-500 dark:text-neutral-400">
-                    Status
-                  </span>
+                  <span className="text-neutral-400">Status</span>
 
                   <span
                     className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium capitalize
                                 ${
                                   peopleAhead <= 1
-                                    ? "bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400"
-                                    : "bg-emerald-100 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-400"
+                                    ? "bg-yellow-900/30 text-yellow-400"
+                                    : "bg-emerald-900/30 text-emerald-400"
                                 }`}
                   >
                     {queueItem?.status === "waiting"
@@ -274,10 +272,8 @@ export default function QueueStatus() {
                   </span>
                 </div>
                 <div className="flex items-center justify-between text-sm">
-                  <span className="text-neutral-500 dark:text-neutral-400">
-                    Cliente
-                  </span>
-                  <span className="font-semibold text-neutral-900 dark:text-white">
+                  <span className="text-neutral-400">Cliente</span>
+                  <span className="font-semibold text-white">
                     {queueItem?.customer?.name}
                   </span>
                 </div>
@@ -288,18 +284,16 @@ export default function QueueStatus() {
         <div className="mx-2">
           <button
             onClick={() => setShowLeaveConfirm(true)}
-            className="rounded-2xl w-full p-4 flex items-center justify-center text-sm  bg-red-700 font-medium hover:text-red-700 transition-colors dark:text-white dark:hover:text-red-400"
+            className="rounded-2xl w-full p-4 flex items-center justify-center text-sm bg-red-700 font-medium text-white hover:text-red-400 transition-colors"
           >
             <LogOut className="mr-1 h-4 w-4" />
             Sair da Fila
           </button>
         </div>
 
-        <div className="rounded-2xl mx-2 bg-white p-6 shadow-sm border border-neutral-100 dark:bg-neutral-900 dark:border-neutral-800">
-          <h3 className="mb-4 font-bold text-neutral-900 dark:text-white">
-            Dicas da Fila
-          </h3>
-          <ul className="space-y-3 text-sm text-neutral-600 dark:text-neutral-400">
+        <div className="rounded-2xl mx-2 bg-neutral-900 p-6 shadow-sm border border-neutral-800">
+          <h3 className="mb-4 font-bold text-white">Dicas da Fila</h3>
+          <ul className="space-y-3 text-sm text-neutral-400">
             <li className="flex items-start">
               <div className="mr-3 mt-1 h-1.5 w-1.5 shrink-0 rounded-full bg-emerald-500" />
               Mantenha esta página aberta para ver atualizações em tempo real.
@@ -320,15 +314,15 @@ export default function QueueStatus() {
               initial={{ opacity: 0, scale: 0.9 }}
               animate={{ opacity: 1, scale: 1 }}
               exit={{ opacity: 0, scale: 0.9 }}
-              className="w-full max-w-sm rounded-3xl bg-white p-8 shadow-2xl text-center dark:bg-neutral-900 dark:border dark:border-neutral-800"
+              className="w-full max-w-sm rounded-3xl bg-neutral-900 p-8 shadow-2xl text-center border border-neutral-800"
             >
-              <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-red-100 text-red-600 dark:bg-red-900/20 dark:text-red-500">
+              <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-red-900/20 text-red-500">
                 <LogOut className="h-8 w-8" />
               </div>
-              <h2 className="mb-2 text-xl font-bold text-neutral-900 dark:text-white">
+              <h2 className="mb-2 text-xl font-bold text-white">
                 Sair da Fila?
               </h2>
-              <p className="mb-8 text-neutral-500 dark:text-neutral-400">
+              <p className="mb-8 text-neutral-400">
                 Você perderá sua posição atual e precisará entrar novamente se
                 mudar de ideia.
               </p>
@@ -336,13 +330,13 @@ export default function QueueStatus() {
               <div className="flex space-x-3">
                 <button
                   onClick={() => setShowLeaveConfirm(false)}
-                  className="h-12 flex-1 rounded-xl bg-neutral-100 font-bold text-neutral-600 hover:bg-neutral-200 dark:bg-neutral-800 dark:text-neutral-400 dark:hover:bg-neutral-700"
+                  className="h-12 flex-1 rounded-xl bg-neutral-800 font-bold text-neutral-400 hover:bg-neutral-700"
                 >
                   Continuar na Fila
                 </button>
                 <button
                   onClick={handleLeave}
-                  className="h-12 flex-1 rounded-xl bg-red-600 font-bold text-white shadow-lg shadow-red-100 hover:bg-red-700 dark:shadow-none"
+                  className="h-12 flex-1 rounded-xl bg-red-600 font-bold text-white shadow-none hover:bg-red-700"
                 >
                   Sair Agora
                 </button>

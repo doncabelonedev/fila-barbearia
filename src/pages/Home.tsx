@@ -1,7 +1,9 @@
 import {
+  ArrowDown,
   ArrowRight,
   Clock,
   Loader2,
+  OctagonAlert,
   Phone,
   Scissors,
   User,
@@ -310,11 +312,16 @@ export default function Home() {
               </div>
             </div>
 
+            <div className="flex items-center justify-center gap-3 rounded-full px-2.5 py-4 font-medium bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400">
+              <OctagonAlert /> Você ainda não está na fila. Veja a estimativa:
+              <ArrowDown />
+            </div>
+
             <div className="space-y-6 text-left">
               <div className="grid grid-cols-2 gap-3">
                 <div className="rounded-xl bg-white p-4 text-center border border-neutral-200 shadow-sm dark:bg-neutral-900 dark:border-neutral-800">
                   <Users className="mx-auto mb-2 h-6 w-6 text-emerald-600" />
-                  <p className="text-xs font-bold uppercase text-neutral-500 dark:text-neutral-500">
+                  <p className="text-xs font-bold uppercase text-neutral-500 dark:text-yellow-400">
                     Sua posição estimada
                   </p>
                   <p className="text-xl font-black text-neutral-900 dark:text-white mt-2">
@@ -323,7 +330,7 @@ export default function Home() {
                 </div>
                 <div className="rounded-xl bg-white p-4 text-center border border-neutral-200 shadow-sm dark:bg-neutral-900 dark:border-neutral-800">
                   <Clock className="mx-auto mb-2 h-6 w-6 text-emerald-600" />
-                  <p className="text-xs font-bold uppercase text-neutral-500 dark:text-neutral-500">
+                  <p className="text-xs font-bold uppercase text-neutral-500 dark:text-yellow-400">
                     Horário estimado
                   </p>
                   <p className="text-xl font-black text-neutral-900 dark:text-white mt-2">

@@ -61,6 +61,13 @@ export default function AdminDashboard() {
 
   const adminPin = import.meta.env.VITE_ADMIN_PIN || "1234";
 
+  const playUpdateSound = useCallback(() => {
+    const audio = new Audio("/cash-register.mp3");
+    audio
+      .play()
+      .catch((err) => console.warn("Áudio bloqueado pelo navegador:", err));
+  }, []);
+
   const fetchQueue = useCallback(async () => {
     const { data, error } = await supabase
       .from("queue")
@@ -120,8 +127,12 @@ export default function AdminDashboard() {
         .on(
           "postgres_changes" as any,
           { event: "*", schema: "public", table: "queue" },
-          () => {
+          (payload) => {
             fetchQueue();
+            // Tocar o som apenas quando um NOVO cliente entrar na fila
+            if (payload.eventType === "INSERT") {
+              playUpdateSound();
+            }
           },
         )
         .on(
@@ -137,7 +148,7 @@ export default function AdminDashboard() {
         supabase.removeChannel(channel);
       };
     }
-  }, [isAuthenticated, fetchQueue, fetchSettings]);
+  }, [isAuthenticated, fetchQueue, fetchSettings, playUpdateSound]);
 
   useEffect(() => {
     const auth = sessionStorage.getItem("barber_admin_auth");

@@ -657,22 +657,15 @@ export default function AdminDashboard() {
 
       <main className="mx-auto max-w-4xl p-4 space-y-6">
         {/* Stats */}
-        <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
+        <div className="grid grid-cols-2 gap-4 ">
           <div className="rounded-2xl bg-neutral-900 p-4 shadow-sm border border-neutral-800">
             <p className="text-xs font-bold uppercase text-neutral-500">
               Na Fila
             </p>
             <p className="text-2xl font-black text-white">{queue.length}</p>
           </div>
-          <div className="rounded-2xl bg-neutral-900 p-4 shadow-sm border border-neutral-800">
-            <p className="text-xs font-bold uppercase text-neutral-500">
-              Tempo Base
-            </p>
-            <p className="text-2xl font-black text-white">
-              {baseQueueTime == null ? 30 : baseQueueTime}m
-            </p>
-          </div>
-          <div className="col-span-2 rounded-2xl bg-emerald-600 p-4 text-white shadow-none">
+
+          <div className="rounded-2xl bg-emerald-600 p-4 text-white shadow-none">
             <p className="text-xs font-bold uppercase opacity-70">
               Atendendo Agora
             </p>

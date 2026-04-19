@@ -244,21 +244,7 @@ export default function QueueStatus() {
                   href="https://www.instagram.com/doncabellone?igsh=MWMzNmxwOHFhNmRyYg=="
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="
-    flex items-center justify-center
-    rounded-2xl
-    px-6 py-4
-    font-semibold text-white
-    bg-linear-to-r
-    from-[#feda75]
-    via-[#fa7e1e]
-    via-[#d62976]
-    to-[#962fbf]
-    shadow-md
-    transition-all duration-300 ease-in-out
-    hover:brightness-110 hover:shadow-lg
-    active:scale-95
-  "
+                  className=" flex items-center justify-center rounded-2xl px-6 py-4 font-semibold text-white bg-linear-to-r from-[#feda75] via-[#fa7e1e] via-[#d62976] to-[#962fbf] shadow-md transition-all duration-300 ease-in-out hover:brightness-110 hover:shadow-lg active:scale-95"
                 >
                   <FaInstagram className="mr-2 h-5 w-5" />
                   Siga-nos no Instagram

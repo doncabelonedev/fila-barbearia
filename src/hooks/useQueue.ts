@@ -28,9 +28,7 @@ export function useShopStatus() {
             setMessage("");
           } else {
             setIsOpen(false);
-            setMessage(
-              "A barbearia está fechada manualmente pelo administrador.",
-            );
+            setMessage("A barbearia está fechada manualmente pelo administrador.");
           }
           setLoading(false);
           return;
@@ -46,9 +44,7 @@ export function useShopStatus() {
         if (exception) {
           if (exception.is_closed) {
             setIsOpen(false);
-            setMessage(
-              "A barbearia está fechada hoje devido a um feriado ou evento especial.",
-            );
+            setMessage("A barbearia está fechada hoje devido a um feriado ou evento especial.");
           } else if (exception.open_time && exception.close_time) {
             const open = exception.open_time;
             const close = exception.close_time;
@@ -116,33 +112,26 @@ export function useShopStatus() {
 
 function roundDateUpTo15(date: Date): Date {
   const d = new Date(date);
-
   const minutes = d.getMinutes();
   const rounded = Math.ceil(minutes / 15) * 15;
-
   if (rounded === 60) {
     d.setHours(d.getHours() + 1);
     d.setMinutes(0);
   } else {
     d.setMinutes(rounded);
   }
-
   d.setSeconds(0);
   d.setMilliseconds(0);
-
   return d;
 }
 
 function roundDateDownTo15(date: Date): Date {
   const d = new Date(date);
-
   const minutes = d.getMinutes();
   const rounded = Math.floor(minutes / 15) * 15;
-
   d.setMinutes(rounded);
   d.setSeconds(0);
   d.setMilliseconds(0);
-
   return d;
 }
 
@@ -190,7 +179,7 @@ export async function calculateEstimatedServiceTimeDynamic(
       .limit(1)
       .maybeSingle();
 
-    // Fetch recent service durations to compute an average
+    // Fetch recent service durations to compute an average (used only to account for elapsed time)
     const { data: recent } = await supabase
       .from("services")
       .select("duration_minutes")
@@ -206,8 +195,6 @@ export async function calculateEstimatedServiceTimeDynamic(
       avg = Math.max(5, Math.round(sum / recent.length));
     }
 
-    const pessoasNaFrente = posicaoNaFila - 1;
-
     const now = new Date();
 
     // Remaining time for current serving (if any)
@@ -221,19 +208,19 @@ export async function calculateEstimatedServiceTimeDynamic(
       remainingCurrent = Math.max(0, avg - elapsed);
     }
 
-    // Build ETA using average service time so consecutive positions are spaced by `avg` minutes.
-    // Compute a single rounded base start (accounts for remaining time of current service),
-    // then shift it by multiples of `avg` for each subsequent position. This avoids
-    // multiple roundings that could make different positions fall into the same 15-min slot.
-    const clientesAtrasDoAtendimento = Math.max(
-      0,
-      pessoasNaFrente - (serving ? 1 : 0),
-    );
-
+    // Base start time rounded to the next 15‑minute boundary
     const baseStart = roundDateUpTo15(addMinutes(now, remainingCurrent));
 
-    const startTime = addMinutes(baseStart, clientesAtrasDoAtendimento * avg);
-    const endTime = new Date(startTime.getTime() + 15 * 60000);
+    // Fixed interval between starts (15 minutes)
+    const INTERVALO_MINUTOS = 15;
+
+    // Each position after the first displayed one steps by 3 intervals (45 minutes)
+    // This gives: position 2 -> 00:30, position 3 -> 01:15, position 4 -> 02:00, etc.
+    const shiftCount = Math.max(0, posicaoNaFila - 2) * 3;
+
+    // Compute start and end for the requested position
+    const startTime = roundDateUpTo15(addMinutes(baseStart, shiftCount * INTERVALO_MINUTOS));
+    const endTime = addMinutes(startTime, INTERVALO_MINUTOS);
 
     return `${format(startTime, "HH:mm")} e ${format(endTime, "HH:mm")}`;
   } catch (error) {
@@ -270,7 +257,6 @@ export async function calculateEstimatedMinutes(
       avg = Math.max(5, Math.round(sum / recent.length));
     }
 
-    const pessoasNaFrente = posicaoNaFila - 1;
     const now = new Date();
 
     let remainingCurrent = 0;
@@ -284,7 +270,7 @@ export async function calculateEstimatedMinutes(
     }
 
     const totalMin =
-      remainingCurrent + Math.max(0, pessoasNaFrente - (serving ? 1 : 0)) * avg;
+      remainingCurrent + Math.max(0, posicaoNaFila - 1 - (serving ? 1 : 0)) * avg;
     return Math.max(0, Math.round(totalMin));
   } catch (error) {
     console.error("Error calculating dynamic ETA minutes:", error);

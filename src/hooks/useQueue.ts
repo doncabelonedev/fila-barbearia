@@ -208,12 +208,15 @@ export async function calculateEstimatedServiceTimeDynamic(
       if (serving?.service_start) {
         const started = new Date(serving.service_start);
         const projectedEnd = addMinutes(started, avg);
-        return projectedEnd > now ? projectedEnd : now;
+        if (projectedEnd.getTime() > now.getTime()) {
+          return projectedEnd;
+        }
+        return addMinutes(now, 15);
       }
-      return now;
+      return addMinutes(now, avg);
     })();
 
-    const shiftByMinutes = posicaoNaFila * avg;
+    const shiftByMinutes = (posicaoNaFila - 1) * 30;
     const rawStart = addMinutes(baseStart, shiftByMinutes);
 
     const startTime = roundDateUpTo15(rawStart);
@@ -265,7 +268,7 @@ export async function calculateEstimatedMinutes(
         0,
         Math.round((now.getTime() - started.getTime()) / 60000),
       );
-      remainingCurrent = avg - elapsed > 0 ? avg - elapsed : 5;
+      remainingCurrent = avg - elapsed > 0 ? avg - elapsed : avg;
     } else if (serving) {
       remainingCurrent = avg;
     }

@@ -28,7 +28,9 @@ export function useShopStatus() {
             setMessage("");
           } else {
             setIsOpen(false);
-            setMessage("A barbearia está fechada manualmente pelo administrador.");
+            setMessage(
+              "A barbearia está fechada manualmente pelo administrador.",
+            );
           }
           setLoading(false);
           return;
@@ -44,7 +46,9 @@ export function useShopStatus() {
         if (exception) {
           if (exception.is_closed) {
             setIsOpen(false);
-            setMessage("A barbearia está fechada hoje devido a um feriado ou evento especial.");
+            setMessage(
+              "A barbearia está fechada hoje devido a um feriado ou evento especial.",
+            );
           } else if (exception.open_time && exception.close_time) {
             const open = exception.open_time;
             const close = exception.close_time;
@@ -168,10 +172,11 @@ export function calculateEstimatedServiceTime(posicaoNaFila: number): string {
 export async function calculateEstimatedServiceTimeDynamic(
   posicaoNaFila: number,
 ): Promise<string> {
-  if (posicaoNaFila <= 1) return "Agora";
+  if (posicaoNaFila <= 0) return "Agora";
+
+  const now = new Date();
 
   try {
-    // Fetch current serving item to account for elapsed time
     const { data: serving } = await supabase
       .from("queue")
       .select("service_start")
@@ -179,7 +184,10 @@ export async function calculateEstimatedServiceTimeDynamic(
       .limit(1)
       .maybeSingle();
 
-    // Fetch recent service durations to compute an average (used only to account for elapsed time)
+    if (!serving && posicaoNaFila <= 1) {
+      return "Agora";
+    }
+
     const { data: recent } = await supabase
       .from("services")
       .select("duration_minutes")
@@ -189,38 +197,27 @@ export async function calculateEstimatedServiceTimeDynamic(
     let avg = 30;
     if (recent && recent.length > 0) {
       const sum = recent.reduce(
-        (acc: any, cur: any) => acc + cur.duration_minutes,
+        (acc: number, cur: { duration_minutes: number }) =>
+          acc + cur.duration_minutes,
         0,
       );
       avg = Math.max(5, Math.round(sum / recent.length));
     }
 
-    const now = new Date();
+    const baseStart = (() => {
+      if (serving?.service_start) {
+        const started = new Date(serving.service_start);
+        const projectedEnd = addMinutes(started, avg);
+        return projectedEnd > now ? projectedEnd : now;
+      }
+      return now;
+    })();
 
-    // Remaining time for current serving (if any)
-    let remainingCurrent = 0;
-    if (serving && serving.service_start) {
-      const started = new Date(serving.service_start);
-      const elapsed = Math.max(
-        0,
-        Math.round((now.getTime() - started.getTime()) / 60000),
-      );
-      remainingCurrent = Math.max(0, avg - elapsed);
-    }
+    const shiftByMinutes = posicaoNaFila * avg;
+    const rawStart = addMinutes(baseStart, shiftByMinutes);
 
-    // Base start time rounded to the next 15‑minute boundary
-    const baseStart = roundDateUpTo15(addMinutes(now, remainingCurrent));
-
-    // Fixed interval between starts (15 minutes)
-    const INTERVALO_MINUTOS = 15;
-
-    // Each position after the first displayed one steps by 3 intervals (45 minutes)
-    // This gives: position 2 -> 00:30, position 3 -> 01:15, position 4 -> 02:00, etc.
-    const shiftCount = Math.max(0, posicaoNaFila - 2) * 3;
-
-    // Compute start and end for the requested position
-    const startTime = roundDateUpTo15(addMinutes(baseStart, shiftCount * INTERVALO_MINUTOS));
-    const endTime = addMinutes(startTime, INTERVALO_MINUTOS);
+    const startTime = roundDateUpTo15(rawStart);
+    const endTime = addMinutes(startTime, 15);
 
     return `${format(startTime, "HH:mm")} e ${format(endTime, "HH:mm")}`;
   } catch (error) {
@@ -232,7 +229,7 @@ export async function calculateEstimatedServiceTimeDynamic(
 export async function calculateEstimatedMinutes(
   posicaoNaFila: number,
 ): Promise<number> {
-  if (posicaoNaFila <= 1) return 0;
+  if (posicaoNaFila <= 0) return 0;
 
   try {
     const { data: serving } = await supabase
@@ -241,6 +238,8 @@ export async function calculateEstimatedMinutes(
       .eq("status", "serving")
       .limit(1)
       .maybeSingle();
+
+    if (!serving && posicaoNaFila <= 1) return 0;
 
     const { data: recent } = await supabase
       .from("services")
@@ -266,11 +265,13 @@ export async function calculateEstimatedMinutes(
         0,
         Math.round((now.getTime() - started.getTime()) / 60000),
       );
-      remainingCurrent = Math.max(0, avg - elapsed);
+      remainingCurrent = avg - elapsed > 0 ? avg - elapsed : 5;
+    } else if (serving) {
+      remainingCurrent = avg;
     }
 
-    const totalMin =
-      remainingCurrent + Math.max(0, posicaoNaFila - 1 - (serving ? 1 : 0)) * avg;
+    const pessoasNaFrente = posicaoNaFila - 1;
+    const totalMin = remainingCurrent + pessoasNaFrente * avg;
     return Math.max(0, Math.round(totalMin));
   } catch (error) {
     console.error("Error calculating dynamic ETA minutes:", error);

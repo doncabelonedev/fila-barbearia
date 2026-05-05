@@ -172,6 +172,72 @@ export function calculateEstimatedServiceTime(posicaoNaFila: number): string {
   return `${format(minTime, "HH:mm")} e ${format(maxTime, "HH:mm")}`;
 }
 
+export async function calculateEstimatedServiceTimeDynamic(
+  posicaoNaFila: number,
+): Promise<string> {
+  if (posicaoNaFila <= 1) return "Agora";
+
+  try {
+    // Fetch current serving item to account for elapsed time
+    const { data: serving } = await supabase
+      .from("queue")
+      .select("service_start")
+      .eq("status", "serving")
+      .limit(1)
+      .maybeSingle();
+
+    // Fetch recent service durations to compute an average
+    const { data: recent } = await supabase
+      .from("services")
+      .select("duration_minutes")
+      .order("created_at", { ascending: false })
+      .limit(10);
+
+    let avg = 30;
+    if (recent && recent.length > 0) {
+      const sum = recent.reduce(
+        (acc: any, cur: any) => acc + cur.duration_minutes,
+        0,
+      );
+      avg = Math.max(5, Math.round(sum / recent.length));
+    }
+
+    const pessoasNaFrente = posicaoNaFila - 1;
+
+    const now = new Date();
+
+    // Remaining time for current serving (if any)
+    let remainingCurrent = 0;
+    if (serving && serving.service_start) {
+      const started = new Date(serving.service_start);
+      const elapsed = Math.max(
+        0,
+        Math.round((now.getTime() - started.getTime()) / 60000),
+      );
+      remainingCurrent = Math.max(0, avg - elapsed);
+    }
+
+    // If there's someone being served, the first person ahead will wait the remaining time,
+    // the rest will wait avg each.
+    let totalMin =
+      remainingCurrent + Math.max(0, pessoasNaFrente - (serving ? 1 : 0)) * avg;
+
+    // Provide a small variability window (+/- 20%)
+    const margem = Math.floor(totalMin * 0.2);
+    let minimo = Math.max(totalMin - margem, 1);
+    let maximo = totalMin + margem;
+
+    let minTime = addMinutes(now, minimo);
+    minTime = roundDateUpTo15(minTime);
+    const maxTime = new Date(minTime.getTime() + 15 * 60000);
+
+    return `${format(minTime, "HH:mm")} e ${format(maxTime, "HH:mm")}`;
+  } catch (error) {
+    console.error("Error calculating dynamic ETA:", error);
+    return calculateEstimatedServiceTime(posicaoNaFila);
+  }
+}
+
 export function useQueueCount() {
   const [count, setCount] = useState<number>(0);
 

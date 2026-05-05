@@ -12,7 +12,7 @@ import toast from "react-hot-toast";
 import { useLocation, useNavigate } from "react-router-dom";
 import {
   useQueueCount,
-  calculateEstimatedServiceTime,
+  calculateEstimatedServiceTimeDynamic,
 } from "../hooks/useQueue";
 import { supabase } from "../lib/supabase";
 
@@ -32,6 +32,8 @@ export default function Join() {
   const { shopName, logoUrl, webhookUrl, trackingUrlBase, baseQueueTime } =
     useShopSettings();
   const [maxQueueTime, setMaxQueueTime] = useState("19:00");
+
+  const [estimatedTimeStr, setEstimatedTimeStr] = useState("Agora");
 
   useEffect(() => {
     async function fetchMaxTime() {
@@ -239,7 +241,21 @@ export default function Join() {
     );
   }
 
-  const estimatedTimeStr = calculateEstimatedServiceTime(queueCount + 1);
+  useEffect(() => {
+    let mounted = true;
+
+    async function calc() {
+      const eta = await calculateEstimatedServiceTimeDynamic(queueCount + 1);
+      if (mounted) setEstimatedTimeStr(eta);
+    }
+
+    calc();
+    const interval = setInterval(calc, 20000);
+    return () => {
+      mounted = false;
+      clearInterval(interval);
+    };
+  }, [queueCount]);
   const isQueueFull =
     estimatedTimeStr !== "Agora" &&
     maxQueueTime &&

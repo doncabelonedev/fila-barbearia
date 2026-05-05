@@ -15,7 +15,7 @@ import React, { useState, useEffect } from "react";
 import toast from "react-hot-toast";
 import { useNavigate } from "react-router-dom";
 import {
-  calculateEstimatedServiceTime,
+  calculateEstimatedServiceTimeDynamic,
   useQueueCount,
   useShopStatus,
 } from "../hooks/useQueue";
@@ -208,7 +208,21 @@ export default function Home() {
     }
   };
 
-  const estimatedTimeStr = calculateEstimatedServiceTime(queueCount + 1);
+  const [estimatedTimeStr, setEstimatedTimeStr] = useState("Agora");
+
+  useEffect(() => {
+    let mounted = true;
+    async function calc() {
+      const eta = await calculateEstimatedServiceTimeDynamic(queueCount + 1);
+      if (mounted) setEstimatedTimeStr(eta);
+    }
+    calc();
+    const interval = setInterval(calc, 20000);
+    return () => {
+      mounted = false;
+      clearInterval(interval);
+    };
+  }, [queueCount]);
   const isQueueFull =
     estimatedTimeStr !== "Agora" &&
     maxQueueTime &&

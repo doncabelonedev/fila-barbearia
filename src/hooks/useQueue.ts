@@ -213,6 +213,9 @@ export async function calculateEstimatedServiceTimeDynamic(
         if (projectedEnd.getTime() > now.getTime()) {
           return projectedEnd;
         }
+        if (posicaoNaFila === 1) {
+          return addMinutes(now, 10);
+        }
         return addMinutes(now, avg);
       }
       return addMinutes(now, avg);

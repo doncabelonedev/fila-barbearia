@@ -167,22 +167,6 @@ export default function QueueStatus() {
 
   const peopleAhead = position ? position - 1 : 0;
 
-  useEffect(() => {
-    let mounted = true;
-
-    async function calc() {
-      const eta = await calculateEstimatedServiceTimeDynamic(peopleAhead + 1);
-      if (mounted) setEstimatedTimeStr(eta);
-    }
-
-    calc();
-    const interval = setInterval(calc, 20000);
-    return () => {
-      mounted = false;
-      clearInterval(interval);
-    };
-  }, [peopleAhead]);
-
   return (
     <div className="flex flex-col items-center p-4 sm:p-8 bg-neutral-950 min-h-screen">
       <motion.div

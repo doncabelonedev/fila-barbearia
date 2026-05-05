@@ -172,8 +172,6 @@ export function calculateEstimatedServiceTime(posicaoNaFila: number): string {
 export async function calculateEstimatedServiceTimeDynamic(
   posicaoNaFila: number,
 ): Promise<string> {
-  if (posicaoNaFila <= 0) return "Agora";
-
   const now = new Date();
 
   try {
@@ -188,20 +186,24 @@ export async function calculateEstimatedServiceTimeDynamic(
       return "Agora";
     }
 
+    if (posicaoNaFila <= 0) return "Agora";
+
     const { data: recent } = await supabase
       .from("services")
       .select("duration_minutes")
       .order("created_at", { ascending: false })
       .limit(10);
 
-    let avg = 30;
+    const SERVICE_DURATION = 30;
+
+    let avg = SERVICE_DURATION;
     if (recent && recent.length > 0) {
       const sum = recent.reduce(
         (acc: number, cur: { duration_minutes: number }) =>
           acc + cur.duration_minutes,
         0,
       );
-      avg = Math.max(5, Math.round(sum / recent.length));
+      avg = Math.max(SERVICE_DURATION, Math.round(sum / recent.length));
     }
 
     const baseStart = (() => {
@@ -211,7 +213,7 @@ export async function calculateEstimatedServiceTimeDynamic(
         if (projectedEnd.getTime() > now.getTime()) {
           return projectedEnd;
         }
-        return addMinutes(now, 15);
+        return addMinutes(now, avg);
       }
       return addMinutes(now, avg);
     })();

@@ -167,7 +167,11 @@ export function calculateEstimatedServiceTime(posicaoNaFila: number): string {
   minTime = roundDateUpTo15(minTime);
 
   // 👉 força o intervalo a ser exatamente de 15 minutos visualmente
-  maxTime = new Date(minTime.getTime() + 15 * 60000);
+  maxTime = roundDateUpTo15(maxTime);
+
+  if (maxTime.getTime() <= minTime.getTime()) {
+    maxTime = new Date(minTime.getTime() + 15 * 60000);
+  }
 
   return `${format(minTime, "HH:mm")} e ${format(maxTime, "HH:mm")}`;
 }
@@ -217,24 +221,76 @@ export async function calculateEstimatedServiceTimeDynamic(
       remainingCurrent = Math.max(0, avg - elapsed);
     }
 
-    // If there's someone being served, the first person ahead will wait the remaining time,
-    // the rest will wait avg each.
-    let totalMin =
-      remainingCurrent + Math.max(0, pessoasNaFrente - (serving ? 1 : 0)) * avg;
+    // Build ETA using average service time so consecutive positions are spaced by `avg` minutes.
+    // Compute a single rounded base start (accounts for remaining time of current service),
+    // then shift it by multiples of `avg` for each subsequent position. This avoids
+    // multiple roundings that could make different positions fall into the same 15-min slot.
+    const clientesAtrasDoAtendimento = Math.max(
+      0,
+      pessoasNaFrente - (serving ? 1 : 0),
+    );
 
-    // Provide a small variability window (+/- 20%)
-    const margem = Math.floor(totalMin * 0.2);
-    let minimo = Math.max(totalMin - margem, 1);
-    let maximo = totalMin + margem;
+    const baseStart = roundDateUpTo15(addMinutes(now, remainingCurrent));
 
-    let minTime = addMinutes(now, minimo);
-    minTime = roundDateUpTo15(minTime);
-    const maxTime = new Date(minTime.getTime() + 15 * 60000);
+    const startTime = addMinutes(baseStart, clientesAtrasDoAtendimento * avg);
+    const endTime = new Date(startTime.getTime() + 15 * 60000);
 
-    return `${format(minTime, "HH:mm")} e ${format(maxTime, "HH:mm")}`;
+    return `${format(startTime, "HH:mm")} e ${format(endTime, "HH:mm")}`;
   } catch (error) {
     console.error("Error calculating dynamic ETA:", error);
     return calculateEstimatedServiceTime(posicaoNaFila);
+  }
+}
+
+export async function calculateEstimatedMinutes(
+  posicaoNaFila: number,
+): Promise<number> {
+  if (posicaoNaFila <= 1) return 0;
+
+  try {
+    const { data: serving } = await supabase
+      .from("queue")
+      .select("service_start")
+      .eq("status", "serving")
+      .limit(1)
+      .maybeSingle();
+
+    const { data: recent } = await supabase
+      .from("services")
+      .select("duration_minutes")
+      .order("created_at", { ascending: false })
+      .limit(10);
+
+    let avg = 30;
+    if (recent && recent.length > 0) {
+      const sum = recent.reduce(
+        (acc: any, cur: any) => acc + cur.duration_minutes,
+        0,
+      );
+      avg = Math.max(5, Math.round(sum / recent.length));
+    }
+
+    const pessoasNaFrente = posicaoNaFila - 1;
+    const now = new Date();
+
+    let remainingCurrent = 0;
+    if (serving && serving.service_start) {
+      const started = new Date(serving.service_start);
+      const elapsed = Math.max(
+        0,
+        Math.round((now.getTime() - started.getTime()) / 60000),
+      );
+      remainingCurrent = Math.max(0, avg - elapsed);
+    }
+
+    const totalMin =
+      remainingCurrent + Math.max(0, pessoasNaFrente - (serving ? 1 : 0)) * avg;
+    return Math.max(0, Math.round(totalMin));
+  } catch (error) {
+    console.error("Error calculating dynamic ETA minutes:", error);
+    // Fallback: estimate using fixed 30min per position
+    const pessoasNaFrente = posicaoNaFila - 1;
+    return Math.max(0, pessoasNaFrente * 30);
   }
 }
 
@@ -246,7 +302,7 @@ export function useQueueCount() {
       const { count: queueCount, error } = await supabase
         .from("queue")
         .select("*", { count: "exact", head: true })
-        .in("status", ["waiting", "serving"]);
+        .eq("status", "waiting");
 
       if (!error && queueCount !== null) {
         setCount(queueCount);

@@ -62,6 +62,11 @@ export type QueueItem = {
   service_start?: string;
   service_end?: string;
   customer?: Customer;
+  // Optional fields stored in DB for notifications and webhook tracking
+  notified_near?: boolean;
+  notified_next?: boolean;
+  last_update_sent_at?: string;
+  last_sent_eta?: number;
 };
 
 export type Service = {

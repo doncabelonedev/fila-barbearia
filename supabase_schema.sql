@@ -80,6 +80,11 @@ ALTER PUBLICATION supabase_realtime ADD TABLE barbershop_schedule;
 ALTER PUBLICATION supabase_realtime ADD TABLE schedule_exceptions;
 ALTER PUBLICATION supabase_realtime ADD TABLE shop_settings;
 
+-- Add persistent webhook update tracking fields to queue
+ALTER TABLE IF EXISTS queue
+  ADD COLUMN IF NOT EXISTS last_update_sent_at TIMESTAMPTZ,
+  ADD COLUMN IF NOT EXISTS last_sent_eta INTEGER;
+
 -- STORAGE POLICIES (Run these to fix upload errors)
 -- Note: Replace 'logos' with your bucket name if different
 

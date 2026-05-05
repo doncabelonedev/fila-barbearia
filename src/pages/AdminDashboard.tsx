@@ -25,7 +25,7 @@ import { AnimatePresence, motion } from "motion/react";
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import toast from "react-hot-toast";
 import { useNavigate } from "react-router-dom";
-import { useQueueCount } from "../hooks/useQueue";
+import { useQueueCount, calculateEstimatedMinutes } from "../hooks/useQueue";
 import { QueueItem, supabase } from "../lib/supabase";
 
 import { useShopSettings } from "../hooks/useShopSettings";
@@ -203,9 +203,6 @@ export default function AdminDashboard() {
   useEffect(() => {
     if (isAuthenticated && queue.length > 0) {
       const processWebhooks = async () => {
-        const servingCount = queue.filter(
-          (item) => item.status === "serving",
-        ).length;
         const waitingItems = queue
           .filter((item) => item.status === "waiting")
           .sort((a, b) => a.position - b.position);
@@ -213,7 +210,7 @@ export default function AdminDashboard() {
         const currentBaseTime = baseQueueTime == null ? 30 : baseQueueTime;
         for (let index = 0; index < waitingItems.length; index++) {
           const item = waitingItems[index];
-          const position = index + 1 + servingCount;
+          const position = index + 1; // position within waiting list (1 = next)
           const peopleAhead = position - 1;
 
           // // Verifica quanto tempo o cliente está na fila (em milissegundos)
@@ -319,19 +316,58 @@ export default function AdminDashboard() {
             }
           } else if (positionChanged) {
             // Envia um evento de UPDATE caso a posição mude (ex: 4 para 3, ou 2 para 1)
-            if (item.customer?.phone?.startsWith("manual_")) {
-              sent = true;
-            } else {
-              sent = await webhookService.sendWebhook(
-                "UPDATE",
-                item,
-                position,
-                peopleAhead,
-                currentBaseTime,
-                shopName,
-                webhookUrl,
-                trackingUrlBase,
+            // Mas agora só enviamos UPDATEs persistentes quando o ETA mudou o suficiente (>=10 min)
+            try {
+              const etaMinutes = await calculateEstimatedMinutes(
+                peopleAhead + 1,
               );
+
+              // Read previous sent eta and timestamp from the item
+              const prevSentEta = (item as any).last_sent_eta as number | null;
+              const prevSentAt = (item as any).last_update_sent_at
+                ? new Date((item as any).last_update_sent_at)
+                : null;
+
+              const now = new Date();
+              const cooldownMs = 5 * 60 * 1000; // 5 minutes cooldown between update sends
+              const etaDiff =
+                prevSentEta == null
+                  ? Infinity
+                  : Math.abs(etaMinutes - prevSentEta);
+
+              const shouldSendEtaUpdate =
+                etaDiff >= 10 &&
+                (prevSentAt == null ||
+                  now.getTime() - prevSentAt.getTime() >= cooldownMs);
+
+              if (shouldSendEtaUpdate) {
+                if (item.customer?.phone?.startsWith("manual_")) {
+                  sent = true;
+                } else {
+                  sent = await webhookService.sendWebhook(
+                    "UPDATE",
+                    item,
+                    position,
+                    peopleAhead,
+                    currentBaseTime,
+                    shopName,
+                    webhookUrl,
+                    trackingUrlBase,
+                  );
+                }
+
+                if (sent) {
+                  await supabase
+                    .from("queue")
+                    .update({
+                      last_update_sent_at: new Date().toISOString(),
+                      last_sent_eta: etaMinutes,
+                    })
+                    .eq("id", item.id);
+                }
+              }
+            } catch (err) {
+              console.error("Failed to compute/send ETA update:", err);
             }
           }
 
@@ -396,6 +432,8 @@ export default function AdminDashboard() {
         .eq("id", item.id);
 
       toast.success(`Iniciou atendimento para ${item.customer?.name}`);
+      // Normalize positions after changing statuses
+      await normalizeQueuePositions();
       await fetchQueue();
     } catch (error) {
       //console.error(error);
@@ -430,6 +468,8 @@ export default function AdminDashboard() {
       ]);
 
       toast.success(`Atendimento de ${item.customer?.name} finalizado!`);
+      // Normalize positions after completing service
+      await normalizeQueuePositions();
       await fetchQueue();
     } catch (error) {
       //console.error(error);
@@ -450,6 +490,8 @@ export default function AdminDashboard() {
       if (error) throw error;
       toast.success("Cliente removido");
       setItemToRemove(null);
+      // Normalize positions after removal
+      await normalizeQueuePositions();
       await fetchQueue();
     } catch (error) {
       //console.error(error);
@@ -459,16 +501,69 @@ export default function AdminDashboard() {
     }
   };
 
+  // Ensure queue positions are sequential and compact after status/position changes
+  async function normalizeQueuePositions() {
+    try {
+      const { data: servingItems } = await supabase
+        .from("queue")
+        .select("id, position, status")
+        .eq("status", "serving")
+        .order("position", { ascending: true });
+
+      const { data: waitingItems } = await supabase
+        .from("queue")
+        .select("id, position, status")
+        .eq("status", "waiting")
+        .order("position", { ascending: true });
+
+      const combined = [...(servingItems || []), ...(waitingItems || [])];
+
+      const updates: Promise<any>[] = [];
+      for (let i = 0; i < combined.length; i++) {
+        const desiredPos = i + 1;
+        const item = combined[i] as any;
+        if (item.position !== desiredPos) {
+          updates.push(
+            supabase
+              .from("queue")
+              .update({ position: desiredPos })
+              .eq("id", item.id),
+          );
+        }
+      }
+
+      if (updates.length > 0) await Promise.all(updates);
+    } catch (err) {
+      console.error("Failed to normalize queue positions:", err);
+    }
+  }
+
   const handleMove = async (item: QueueItem, direction: "up" | "down") => {
     if (processingId) return;
-    const index = queue.findIndex((i) => i.id === item.id);
-    if (direction === "up" && index === 0) return;
-    if (direction === "down" && index === queue.length - 1) return;
+    // Only reorder among waiting items; find the corresponding waiting indices
+    const waitingIndices = queue
+      .map((q, idx) => ({ q, idx }))
+      .filter(({ q }) => q.status === "waiting")
+      .map(({ idx }) => idx);
 
-    const otherItem = direction === "up" ? queue[index - 1] : queue[index + 1];
+    const currentWaitingIndex = waitingIndices.findIndex(
+      (i) => queue[i].id === item.id,
+    );
+    if (currentWaitingIndex === -1) return;
+
+    const targetWaitingIndex =
+      direction === "up" ? currentWaitingIndex - 1 : currentWaitingIndex + 1;
+    if (targetWaitingIndex < 0 || targetWaitingIndex >= waitingIndices.length)
+      return;
+
+    const currentIdx = waitingIndices[currentWaitingIndex];
+    const otherIdx = waitingIndices[targetWaitingIndex];
+
+    const otherItem = queue[otherIdx];
 
     setProcessingId(item.id);
     try {
+      // Swap only the numeric positions between the two waiting items
       await supabase
         .from("queue")
         .update({ position: otherItem.position })
@@ -505,14 +600,24 @@ export default function AdminDashboard() {
   const handleSaveOrder = async () => {
     setLoading(true);
     try {
-      const updates = localQueue.map((item, index) => {
-        return supabase
-          .from("queue")
-          .update({ position: index + 1 })
-          .eq("id", item.id);
-      });
+      // Assign positions sequentially only to waiting items, keep serving untouched
+      let posCounter = 0;
+      const updates: Promise<any>[] = [];
+      for (const item of localQueue) {
+        if (item.status === "waiting") {
+          posCounter += 1;
+          if (item.position !== posCounter) {
+            updates.push(
+              supabase
+                .from("queue")
+                .update({ position: posCounter })
+                .eq("id", item.id),
+            );
+          }
+        }
+      }
 
-      await Promise.all(updates);
+      if (updates.length > 0) await Promise.all(updates);
 
       toast.success("Ordem da fila atualizada!");
       setIsReordering(false);

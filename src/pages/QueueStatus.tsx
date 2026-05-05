@@ -110,7 +110,7 @@ export default function QueueStatus() {
       const { count } = await supabase
         .from("queue")
         .select("*", { count: "exact", head: true })
-        .in("status", ["waiting", "serving"])
+        .eq("status", "waiting")
         .lt("position", currentPosition || 999999);
 
       // Position is count + 1 if we are waiting

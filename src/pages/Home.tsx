@@ -64,7 +64,7 @@ export default function Home() {
 
   const handleConfirmJoin = () => {
     setShowConfirmDialog(false);
-    handleJoinSubmit(new Event("submit") as any);
+    handleJoinSubmit();
   };
 
   const handleFormSubmit = (e: React.FormEvent) => {
@@ -82,7 +82,7 @@ export default function Home() {
     setShowConfirmDialog(true);
   };
 
-  const handleJoinSubmit = async (e: React.FormEvent) => {
+  const handleJoinSubmit = async () => {
 
     setLoading(true);
     const fullPhone = `${ddd}${phone}`;
@@ -424,6 +424,11 @@ export default function Home() {
           animate={{ opacity: 1 }}
           className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4"
           onClick={() => setShowConfirmDialog(false)}
+          onKeyDown={(e) => {
+            if (e.key === "Escape") setShowConfirmDialog(false);
+          }}
+          tabIndex={-1}
+          autoFocus
         >
           <motion.div
             initial={{ scale: 0.9, opacity: 0 }}

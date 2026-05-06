@@ -206,22 +206,22 @@ export async function calculateEstimatedServiceTimeDynamic(
       avg = Math.max(SERVICE_DURATION, Math.round(sum / recent.length));
     }
 
-    const baseStart = (() => {
-      if (serving?.service_start) {
-        const started = new Date(serving.service_start);
-        const projectedEnd = addMinutes(started, avg);
-        if (projectedEnd.getTime() > now.getTime()) {
-          return projectedEnd;
-        }
-        if (posicaoNaFila === 1) {
-          return addMinutes(now, 10);
-        }
-        return addMinutes(now, avg);
+    let baseStart: Date;
+    if (serving?.service_start) {
+      const started = new Date(serving.service_start);
+      const projectedEnd = addMinutes(started, avg);
+      if (projectedEnd.getTime() > now.getTime()) {
+        baseStart = projectedEnd;
+      } else if (posicaoNaFila === 1) {
+        baseStart = addMinutes(now, 10);
+      } else {
+        baseStart = addMinutes(now, avg);
       }
-      return addMinutes(now, avg);
-    })();
+    } else {
+      baseStart = now;
+    }
 
-    const shiftByMinutes = (posicaoNaFila - 1) * 30;
+    const shiftByMinutes = (posicaoNaFila - 1) * avg;
     const rawStart = addMinutes(baseStart, shiftByMinutes);
 
     const startTime = roundDateUpTo15(rawStart);

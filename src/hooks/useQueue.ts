@@ -190,23 +190,7 @@ export async function calculateEstimatedServiceTimeDynamic(
 
     if (posicaoNaFila <= 0) return "Agora";
 
-    const { data: recent } = await supabase
-      .from("services")
-      .select("duration_minutes")
-      .order("created_at", { ascending: false })
-      .limit(50);
-
-    const SERVICE_DURATION = 30;
-
-    let avg = SERVICE_DURATION;
-    if (recent && recent.length > 0) {
-      const sum = recent.reduce(
-        (acc: number, cur: { duration_minutes: number }) =>
-          acc + cur.duration_minutes,
-        0,
-      );
-      avg = Math.max(SERVICE_DURATION, Math.round(sum / recent.length));
-    }
+    const avg = 37;
 
     let baseStart: Date;
     if (serving?.service_start) {
@@ -254,20 +238,7 @@ export async function calculateEstimatedMinutes(
 
     if (!serving && posicaoNaFila <= 1) return 0;
 
-    const { data: recent } = await supabase
-      .from("services")
-      .select("duration_minutes")
-      .order("created_at", { ascending: false })
-      .limit(50);
-
-    let avg = 30;
-    if (recent && recent.length > 0) {
-      const sum = recent.reduce(
-        (acc: any, cur: any) => acc + cur.duration_minutes,
-        0,
-      );
-      avg = Math.max(5, Math.round(sum / recent.length));
-    }
+    const avg = 37;
 
     const now = new Date();
 
@@ -288,9 +259,8 @@ export async function calculateEstimatedMinutes(
     return Math.max(0, Math.round(totalMin));
   } catch (error) {
     console.error("Error calculating dynamic ETA minutes:", error);
-    // Fallback: estimate using fixed 30min per position
     const pessoasNaFrente = posicaoNaFila - 1;
-    return Math.max(0, pessoasNaFrente * 30);
+    return Math.max(0, pessoasNaFrente * 37);
   }
 }
 
@@ -332,28 +302,7 @@ export function useQueueCount() {
 }
 
 export function useAverageServiceTime() {
-  const [avgTime, setAvgTime] = useState(30);
-
-  useEffect(() => {
-    async function fetchAvg() {
-      const { data, error } = await supabase
-        .from("services")
-        .select("duration_minutes")
-        .order("created_at", { ascending: false })
-        .limit(50);
-
-      if (data && data.length > 0) {
-        const sum = data.reduce(
-          (acc: any, curr: any) => acc + curr.duration_minutes,
-          0,
-        );
-        setAvgTime(Math.round(sum / data.length));
-      }
-    }
-    fetchAvg();
-  }, []);
-
-  return avgTime;
+  return 37;
 }
 
 export function calculateEstimatedWaitTime(

@@ -206,7 +206,9 @@ export default function AdminDashboard() {
     const processWebhooks = async () => {
       processingWebhooksRef.current = true;
       try {
-        const servingCount = queue.filter((item) => item.status === "serving").length;
+        const servingCount = queue.filter(
+          (item) => item.status === "serving",
+        ).length;
         const waitingItems = queue
           .filter((item) => item.status === "waiting")
           .sort((a, b) => a.position - b.position);
@@ -233,7 +235,11 @@ export default function AdminDashboard() {
 
             // Caso: Chegou ao topo da fila (NEXT)
             const nextTriggerPosition = servingCount + 1;
-            if (position === nextTriggerPosition && lastPos > nextTriggerPosition && !notifiedNext) {
+            if (
+              position === nextTriggerPosition &&
+              lastPos > nextTriggerPosition &&
+              !notifiedNext
+            ) {
               webhookSent = await webhookService.sendWebhook(
                 "NEXT",
                 item,
@@ -553,7 +559,9 @@ export default function AdminDashboard() {
   const handleSaveOrder = async () => {
     setLoading(true);
     try {
-      const servingCount = localQueue.filter((i) => i.status === "serving").length;
+      const servingCount = localQueue.filter(
+        (i) => i.status === "serving",
+      ).length;
       let posCounter = servingCount;
       const updates: Promise<any>[] = [];
       for (const item of localQueue) {
@@ -849,14 +857,23 @@ export default function AdminDashboard() {
                                       </p>
                                     )}
                                   <p className="text-xs text-neutral-600 mt-0.5">
-                                    {new Date(item.created_at).toLocaleString("pt-BR", {
-                                      day: "2-digit",
-                                      month: "2-digit",
-                                      year: "2-digit",
-                                      hour: "2-digit",
-                                      minute: "2-digit",
-                                    })}
+                                    {new Date(item.created_at).toLocaleString(
+                                      "pt-BR",
+                                      {
+                                        day: "2-digit",
+                                        month: "2-digit",
+                                        year: "2-digit",
+                                        hour: "2-digit",
+                                        minute: "2-digit",
+                                        second: "2-digit",
+                                      },
+                                    )}
                                   </p>
+                                  {item.status === "serving" && item.service_start && (
+                                    <p className="text-xs text-emerald-400 mt-0.5 font-semibold">
+                                      Iniciou: {new Date(item.service_start).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit", second: "2-digit" })}
+                                    </p>
+                                  )}
                                 </div>
                               </div>
 
@@ -891,7 +908,7 @@ export default function AdminDashboard() {
                                       onClick={() => handleStartService(item)}
                                       disabled={!!processingId}
                                       className="flex h-10 w-10 items-center justify-center rounded-xl bg-emerald-600 text-white shadow-sm hover:bg-emerald-700 transition-all disabled:opacity-50 "
-                                      title="Start Service"
+                                      title="Iniciar Atendimento"
                                     >
                                       <Play className="h-5 w-5 fill-current" />
                                     </button>

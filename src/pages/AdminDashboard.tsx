@@ -40,9 +40,8 @@ export default function AdminDashboard() {
   const [localQueue, setLocalQueue] = useState<QueueItem[]>([]);
   const [isReordering, setIsReorderingState] = useState(false);
   const isReorderingRef = useRef(false);
-  const notifiedNextSet = useRef<Set<string>>(new Set());
-  const notifiedNearSet = useRef<Set<string>>(new Set());
   const notifiedPositionMap = useRef<Map<string, number>>(new Map());
+  const processingWebhooksRef = useRef(false);
 
   const setIsReordering = (value: boolean) => {
     isReorderingRef.current = value;
@@ -127,7 +126,7 @@ export default function AdminDashboard() {
         .on(
           "postgres_changes" as any,
           { event: "*", schema: "public", table: "queue" },
-          (payload) => {
+          (payload: any) => {
             fetchQueue();
             // Tocar o som apenas quando um NOVO cliente entrar na fila
             if (payload.eventType === "INSERT") {
@@ -201,72 +200,39 @@ export default function AdminDashboard() {
   };
 
   useEffect(() => {
-    if (isAuthenticated && queue.length > 0) {
-      const processWebhooks = async () => {
+    if (!isAuthenticated || queue.length === 0 || processingWebhooksRef.current)
+      return;
+
+    const processWebhooks = async () => {
+      processingWebhooksRef.current = true;
+      try {
         const waitingItems = queue
           .filter((item) => item.status === "waiting")
           .sort((a, b) => a.position - b.position);
 
         const currentBaseTime = baseQueueTime == null ? 30 : baseQueueTime;
+
         for (let index = 0; index < waitingItems.length; index++) {
           const item = waitingItems[index];
-          const position = index + 1; // position within waiting list (1 = next)
+          const position = index + 1;
           const peopleAhead = position - 1;
-
-          // // Verifica quanto tempo o cliente está na fila (em milissegundos)
-          // const timeInQueue = Date.now() - new Date(item.created_at).getTime();
-          // // Se o cliente acabou de entrar (menos de 1 minuto), não envia NEXT ou NEAR
-          // // pois ele acabou de receber a notificação de JOINED
-          // if (timeInQueue < 60000) {
-          //   console.log("Entrou ha menos de 1 minuto");
-          //   continue;
-          // }
-
-          let sent = false;
-
-          let notifiedNext = (item as any).notified_next;
-          let notifiedNear = (item as any).notified_near;
-
           const lastPos = notifiedPositionMap.current.get(item.id);
-          const positionChanged = lastPos !== undefined && lastPos !== position;
 
-          // Atualiza o mapa de posições imediatamente de forma síncrona para evitar
-          // que as próximas execuções concorrentes (causadas por várias atualizações rápidas)
-          // achem que a posição mudou de novo.
-          if (lastPos !== position) {
+          // 1. Registro inicial / Novos itens
+          if (lastPos === undefined) {
             notifiedPositionMap.current.set(item.id, position);
+            continue; // Não envia notificações no primeiro carregamento ou quando acaba de entrar
           }
 
-          // Se a pessoa for movida para trás na fila, resetamos as notificações para que ela seja avisada novamente
-          if (peopleAhead > 0 && notifiedNext) {
-            notifiedNext = false;
-            notifiedNextSet.current.delete(item.id);
-            supabase
-              .from("queue")
-              .update({ notified_next: false })
-              .eq("id", item.id)
-              .then();
-          }
-          if (peopleAhead > 2 && notifiedNear) {
-            notifiedNear = false;
-            notifiedNearSet.current.delete(item.id);
-            supabase
-              .from("queue")
-              .update({ notified_near: false })
-              .eq("id", item.id)
-              .then();
-          }
+          // 2. Detectar mudanças de posição
+          if (lastPos !== position) {
+            const notifiedNext = (item as any).notified_next ?? false;
+            const notifiedNear = (item as any).notified_near ?? false;
+            let webhookSent = false;
 
-          if (
-            peopleAhead === 0 &&
-            !notifiedNext &&
-            !notifiedNextSet.current.has(item.id)
-          ) {
-            notifiedNextSet.current.add(item.id);
-            if (item.customer?.phone?.startsWith("manual_")) {
-              sent = true; // Finge que enviou para atualizar o banco e não tentar de novo
-            } else {
-              sent = await webhookService.sendWebhook(
+            // Caso: Chegou ao topo (NEXT)
+            if (position === 1 && lastPos > 1 && !notifiedNext) {
+              webhookSent = await webhookService.sendWebhook(
                 "NEXT",
                 item,
                 position,
@@ -276,26 +242,16 @@ export default function AdminDashboard() {
                 webhookUrl,
                 trackingUrlBase,
               );
+              if (webhookSent) {
+                await supabase
+                  .from("queue")
+                  .update({ notified_next: true })
+                  .eq("id", item.id);
+              }
             }
-            if (sent) {
-              await supabase
-                .from("queue")
-                .update({ notified_next: true })
-                .eq("id", item.id);
-            } else {
-              notifiedNextSet.current.delete(item.id);
-            }
-          } else if (
-            peopleAhead > 0 &&
-            peopleAhead <= 2 &&
-            !notifiedNear &&
-            !notifiedNearSet.current.has(item.id)
-          ) {
-            notifiedNearSet.current.add(item.id);
-            if (item.customer?.phone?.startsWith("manual_")) {
-              sent = true; // Finge que enviou para atualizar o banco e não tentar de novo
-            } else {
-              sent = await webhookService.sendWebhook(
+            // Caso: Entrou no Top 3 (NEAR)
+            else if (position <= 3 && lastPos > 3 && !notifiedNear) {
+              webhookSent = await webhookService.sendWebhook(
                 "NEAR",
                 item,
                 position,
@@ -305,46 +261,35 @@ export default function AdminDashboard() {
                 webhookUrl,
                 trackingUrlBase,
               );
+              if (webhookSent) {
+                await supabase
+                  .from("queue")
+                  .update({ notified_near: true })
+                  .eq("id", item.id);
+              }
             }
-            if (sent) {
-              await supabase
-                .from("queue")
-                .update({ notified_near: true })
-                .eq("id", item.id);
-            } else {
-              notifiedNearSet.current.delete(item.id);
-            }
-          } else if (positionChanged) {
-            // Envia um evento de UPDATE caso a posição mude (ex: 4 para 3, ou 2 para 1)
-            // Mas agora só enviamos UPDATEs persistentes quando o ETA mudou o suficiente (>=10 min)
-            try {
-              const etaMinutes = await calculateEstimatedMinutes(
-                peopleAhead + 1,
-              );
+            // Caso: Mudança genérica de posição (UPDATE) se o ETA mudar >= 10min
+            else {
+              try {
+                const etaMinutes = await calculateEstimatedMinutes(position);
+                const prevSentEta = (item as any).last_sent_eta;
+                const prevSentAt = (item as any).last_update_sent_at
+                  ? new Date((item as any).last_update_sent_at)
+                  : null;
 
-              // Read previous sent eta and timestamp from the item
-              const prevSentEta = (item as any).last_sent_eta as number | null;
-              const prevSentAt = (item as any).last_update_sent_at
-                ? new Date((item as any).last_update_sent_at)
-                : null;
+                const now = new Date();
+                const cooldownMs = 5 * 60 * 1000;
+                const etaDiff =
+                  prevSentEta == null
+                    ? Infinity
+                    : Math.abs(etaMinutes - prevSentEta);
 
-              const now = new Date();
-              const cooldownMs = 5 * 60 * 1000; // 5 minutes cooldown between update sends
-              const etaDiff =
-                prevSentEta == null
-                  ? Infinity
-                  : Math.abs(etaMinutes - prevSentEta);
-
-              const shouldSendEtaUpdate =
-                etaDiff >= 10 &&
-                (prevSentAt == null ||
-                  now.getTime() - prevSentAt.getTime() >= cooldownMs);
-
-              if (shouldSendEtaUpdate) {
-                if (item.customer?.phone?.startsWith("manual_")) {
-                  sent = true;
-                } else {
-                  sent = await webhookService.sendWebhook(
+                if (
+                  etaDiff >= 10 &&
+                  (prevSentAt == null ||
+                    now.getTime() - prevSentAt.getTime() >= cooldownMs)
+                ) {
+                  webhookSent = await webhookService.sendWebhook(
                     "UPDATE",
                     item,
                     position,
@@ -354,31 +299,37 @@ export default function AdminDashboard() {
                     webhookUrl,
                     trackingUrlBase,
                   );
-                }
 
-                if (sent) {
-                  await supabase
-                    .from("queue")
-                    .update({
-                      last_update_sent_at: new Date().toISOString(),
-                      last_sent_eta: etaMinutes,
-                    })
-                    .eq("id", item.id);
+                  if (webhookSent) {
+                    await supabase
+                      .from("queue")
+                      .update({
+                        last_update_sent_at: now.toISOString(),
+                        last_sent_eta: etaMinutes,
+                      })
+                      .eq("id", item.id);
+                  }
                 }
+              } catch (e) {
+                console.error("Erro ao processar UPDATE:", e);
               }
-            } catch (err) {
-              console.error("Failed to compute/send ETA update:", err);
+            }
+
+            // Atualiza o mapa local com a nova posição
+            notifiedPositionMap.current.set(item.id, position);
+
+            // Pequeno delay entre envios para não sobrecarregar
+            if (webhookSent) {
+              await new Promise((r) => setTimeout(r, 500));
             }
           }
-
-          if (sent) {
-            await new Promise((resolve) => setTimeout(resolve, 500));
-          }
         }
-      };
+      } finally {
+        processingWebhooksRef.current = false;
+      }
+    };
 
-      processWebhooks();
-    }
+    processWebhooks();
   }, [
     queue,
     isAuthenticated,

@@ -187,7 +187,7 @@ export default function Home() {
       webhookService.sendWebhook(
         "JOINED",
         queueEntry,
-        nextPosition,
+        queueCount + 1,
         queueCount,
         baseQueueTime == null ? 30 : baseQueueTime,
         shopName,

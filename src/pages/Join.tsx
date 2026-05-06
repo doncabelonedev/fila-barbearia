@@ -212,7 +212,7 @@ export default function Join() {
       webhookService.sendWebhook(
         "JOINED",
         queueEntry,
-        nextPosition,
+        queueCount + 1,
         peopleAhead,
         baseQueueTime == null ? 30 : baseQueueTime,
         shopName,

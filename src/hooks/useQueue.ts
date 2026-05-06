@@ -194,7 +194,7 @@ export async function calculateEstimatedServiceTimeDynamic(
       .from("services")
       .select("duration_minutes")
       .order("created_at", { ascending: false })
-      .limit(10);
+      .limit(50);
 
     const SERVICE_DURATION = 30;
 
@@ -258,7 +258,7 @@ export async function calculateEstimatedMinutes(
       .from("services")
       .select("duration_minutes")
       .order("created_at", { ascending: false })
-      .limit(10);
+      .limit(50);
 
     let avg = 30;
     if (recent && recent.length > 0) {
@@ -340,7 +340,7 @@ export function useAverageServiceTime() {
         .from("services")
         .select("duration_minutes")
         .order("created_at", { ascending: false })
-        .limit(10);
+        .limit(50);
 
       if (data && data.length > 0) {
         const sum = data.reduce(

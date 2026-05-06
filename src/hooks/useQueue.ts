@@ -114,26 +114,16 @@ export function useShopStatus() {
   return { isOpen, message, loading };
 }
 
-function roundDateUpTo15(date: Date): Date {
+function roundToNearest15(date: Date): Date {
   const d = new Date(date);
   const minutes = d.getMinutes();
-  const rounded = Math.ceil(minutes / 15) * 15;
-  if (rounded === 60) {
+  const rounded = Math.round(minutes / 15) * 15;
+  if (rounded >= 60) {
     d.setHours(d.getHours() + 1);
-    d.setMinutes(0);
+    d.setMinutes(rounded - 60);
   } else {
     d.setMinutes(rounded);
   }
-  d.setSeconds(0);
-  d.setMilliseconds(0);
-  return d;
-}
-
-function roundDateDownTo15(date: Date): Date {
-  const d = new Date(date);
-  const minutes = d.getMinutes();
-  const rounded = Math.floor(minutes / 15) * 15;
-  d.setMinutes(rounded);
   d.setSeconds(0);
   d.setMilliseconds(0);
   return d;
@@ -157,10 +147,9 @@ export function calculateEstimatedServiceTime(posicaoNaFila: number): string {
   let maxTime = addMinutes(now, maximo);
 
   // 👉 arredondamento correto
-  minTime = roundDateUpTo15(minTime);
+  minTime = roundToNearest15(minTime);
 
-  // 👉 força o intervalo a ser exatamente de 15 minutos visualmente
-  maxTime = roundDateUpTo15(maxTime);
+  maxTime = roundToNearest15(maxTime);
 
   if (maxTime.getTime() <= minTime.getTime()) {
     maxTime = new Date(minTime.getTime() + 15 * 60000);
@@ -211,7 +200,7 @@ export async function calculateEstimatedServiceTimeDynamic(
     const shiftByMinutes = waitingAhead * avg;
     const rawStart = addMinutes(baseStart, shiftByMinutes);
 
-    const startTime = roundDateUpTo15(rawStart);
+    const startTime = roundToNearest15(rawStart);
     const endTime = addMinutes(startTime, 15);
 
     return `${format(startTime, "HH:mm")} e ${format(endTime, "HH:mm")}`;

@@ -182,6 +182,8 @@ export async function calculateEstimatedServiceTimeDynamic(
       .limit(1)
       .maybeSingle();
 
+    const servingCount = serving ? 1 : 0;
+
     if (!serving && posicaoNaFila <= 1) {
       return "Agora";
     }
@@ -212,7 +214,7 @@ export async function calculateEstimatedServiceTimeDynamic(
       const projectedEnd = addMinutes(started, avg);
       if (projectedEnd.getTime() > now.getTime()) {
         baseStart = projectedEnd;
-      } else if (posicaoNaFila === 1) {
+      } else if (posicaoNaFila <= servingCount + 1) {
         baseStart = addMinutes(now, 10);
       } else {
         baseStart = addMinutes(now, avg);
@@ -221,7 +223,8 @@ export async function calculateEstimatedServiceTimeDynamic(
       baseStart = now;
     }
 
-    const shiftByMinutes = (posicaoNaFila - 1) * avg;
+    const waitingAhead = Math.max(0, posicaoNaFila - 1 - servingCount);
+    const shiftByMinutes = waitingAhead * avg;
     const rawStart = addMinutes(baseStart, shiftByMinutes);
 
     const startTime = roundDateUpTo15(rawStart);
@@ -246,6 +249,8 @@ export async function calculateEstimatedMinutes(
       .eq("status", "serving")
       .limit(1)
       .maybeSingle();
+
+    const servingCount = serving ? 1 : 0;
 
     if (!serving && posicaoNaFila <= 1) return 0;
 
@@ -278,7 +283,7 @@ export async function calculateEstimatedMinutes(
       remainingCurrent = avg;
     }
 
-    const pessoasNaFrente = posicaoNaFila - 1;
+    const pessoasNaFrente = Math.max(0, posicaoNaFila - 1 - servingCount);
     const totalMin = remainingCurrent + pessoasNaFrente * avg;
     return Math.max(0, Math.round(totalMin));
   } catch (error) {
@@ -297,7 +302,7 @@ export function useQueueCount() {
       const { count: queueCount, error } = await supabase
         .from("queue")
         .select("*", { count: "exact", head: true })
-        .eq("status", "waiting");
+        .in("status", ["waiting", "serving"]);
 
       if (!error && queueCount !== null) {
         setCount(queueCount);

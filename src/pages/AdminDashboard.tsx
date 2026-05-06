@@ -206,6 +206,7 @@ export default function AdminDashboard() {
     const processWebhooks = async () => {
       processingWebhooksRef.current = true;
       try {
+        const servingCount = queue.filter((item) => item.status === "serving").length;
         const waitingItems = queue
           .filter((item) => item.status === "waiting")
           .sort((a, b) => a.position - b.position);
@@ -214,7 +215,7 @@ export default function AdminDashboard() {
 
         for (let index = 0; index < waitingItems.length; index++) {
           const item = waitingItems[index];
-          const position = index + 1;
+          const position = servingCount + index + 1;
           const peopleAhead = position - 1;
           const lastPos = notifiedPositionMap.current.get(item.id);
 
@@ -230,8 +231,9 @@ export default function AdminDashboard() {
             const notifiedNear = (item as any).notified_near ?? false;
             let webhookSent = false;
 
-            // Caso: Chegou ao topo (NEXT)
-            if (position === 1 && lastPos > 1 && !notifiedNext) {
+            // Caso: Chegou ao topo da fila (NEXT)
+            const nextTriggerPosition = servingCount + 1;
+            if (position === nextTriggerPosition && lastPos > nextTriggerPosition && !notifiedNext) {
               webhookSent = await webhookService.sendWebhook(
                 "NEXT",
                 item,
@@ -551,8 +553,8 @@ export default function AdminDashboard() {
   const handleSaveOrder = async () => {
     setLoading(true);
     try {
-      // Assign positions sequentially only to waiting items, keep serving untouched
-      let posCounter = 0;
+      const servingCount = localQueue.filter((i) => i.status === "serving").length;
+      let posCounter = servingCount;
       const updates: Promise<any>[] = [];
       for (const item of localQueue) {
         if (item.status === "waiting") {
@@ -1115,7 +1117,7 @@ function AddCustomerForm({
         webhookService.sendWebhook(
           "JOINED",
           queueEntry,
-          nextPos,
+          queueCount + 1,
           peopleAhead,
           currentBaseTime,
           shopName,

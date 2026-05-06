@@ -846,6 +846,15 @@ export default function AdminDashboard() {
                                         {item.customer.phone}
                                       </p>
                                     )}
+                                  <p className="text-xs text-neutral-600 mt-0.5">
+                                    {new Date(item.created_at).toLocaleString("pt-BR", {
+                                      day: "2-digit",
+                                      month: "2-digit",
+                                      year: "2-digit",
+                                      hour: "2-digit",
+                                      minute: "2-digit",
+                                    })}
+                                  </p>
                                 </div>
                               </div>
 

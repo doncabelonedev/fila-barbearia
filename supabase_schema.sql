@@ -2,77 +2,94 @@
 -- Run this in your Supabase SQL Editor
 
 -- 1. Customers Table
-CREATE TABLE IF NOT EXISTS customers (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  name TEXT NOT NULL,
-  phone TEXT UNIQUE NOT NULL,
-  created_at TIMESTAMPTZ DEFAULT now()
-);
+create table IF NOT EXISTS  public.customers (
+  id uuid not null default gen_random_uuid (),
+  name text not null,
+  phone text not null,
+  created_at timestamp with time zone null default now(),
+  constraint customers_pkey primary key (id),
+  constraint customers_phone_key unique (phone)
+) TABLESPACE pg_default;
 
 -- 2. Queue Table
-CREATE TABLE IF NOT EXISTS queue (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  code TEXT NOT NULL,
-  customer_id UUID REFERENCES customers(id) ON DELETE CASCADE,
-  position INTEGER NOT NULL,
-  status TEXT DEFAULT 'waiting', -- 'waiting', 'serving', 'completed', 'cancelled'
-  created_at TIMESTAMPTZ DEFAULT now(),
-  service_start TIMESTAMPTZ,
-  service_end TIMESTAMPTZ
-);
+create table IF NOT EXISTS public.queue (
+  id uuid not null default gen_random_uuid (),
+  code text not null,
+  customer_id uuid null,
+  position integer not null,
+  status text null default 'waiting'::text,
+  created_at timestamp with time zone null default now(),
+  service_start timestamp with time zone null,
+  service_end timestamp with time zone null,
+  notified_near boolean null default false,
+  notified_next boolean null default false,
+  last_update_sent_at timestamp with time zone null,
+  last_sent_eta integer null,
+  constraint queue_pkey primary key (id),
+  constraint queue_customer_id_fkey foreign KEY (customer_id) references customers (id)
+) TABLESPACE pg_default;
 
 -- 3. Services Table (History)
-CREATE TABLE IF NOT EXISTS services (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  customer_id UUID REFERENCES customers(id) ON DELETE SET NULL,
-  duration_minutes INTEGER NOT NULL,
-  created_at TIMESTAMPTZ DEFAULT now()
-);
+create table IF NOT EXISTS public.services (
+  id uuid not null default gen_random_uuid (),
+  customer_id uuid null,
+  duration_minutes integer not null,
+  created_at timestamp with time zone null default now(),
+  constraint services_pkey primary key (id),
+  constraint services_customer_id_fkey foreign KEY (customer_id) references customers (id)
+) TABLESPACE pg_default;
 
 -- 4. Barbershop Schedule
-CREATE TABLE IF NOT EXISTS barbershop_schedule (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  weekday INTEGER NOT NULL UNIQUE, -- 0 (Sunday) to 6 (Saturday)
-  open_time TIME,
-  close_time TIME,
-  is_closed BOOLEAN DEFAULT false
-);
+create table IF NOT EXISTS  public.barbershop_schedule (
+  id uuid not null default gen_random_uuid (),
+  weekday integer not null,
+  open_time time without time zone null,
+  close_time time without time zone null,
+  is_closed boolean null default false,
+  constraint barbershop_schedule_pkey primary key (id),
+  constraint barbershop_schedule_weekday_key unique (weekday)
+) TABLESPACE pg_default;
 
 -- 5. Schedule Exceptions
-CREATE TABLE IF NOT EXISTS schedule_exceptions (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  date DATE NOT NULL UNIQUE,
-  open_time TIME,
-  close_time TIME,
-  is_closed BOOLEAN DEFAULT false
-);
+create table IF NOT EXISTS public.schedule_exceptions (
+  id uuid not null default gen_random_uuid (),
+  date date not null,
+  open_time time without time zone null,
+  close_time time without time zone null,
+  is_closed boolean null default false,
+  constraint schedule_exceptions_pkey primary key (id),
+  constraint schedule_exceptions_date_key unique (date)
+) TABLESPACE pg_default;
 
 -- 6. Shop Settings
-CREATE TABLE IF NOT EXISTS shop_settings (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  whatsapp_number TEXT DEFAULT '+5521999062880',
-  theme TEXT DEFAULT 'light',
-  shop_name TEXT DEFAULT 'BarberQueue',
-  logo_url TEXT,
-  created_at TIMESTAMPTZ DEFAULT now()
-);
+create table IF NOT EXISTS public.shop_settings (
+  id uuid not null default gen_random_uuid (),
+  manual_status text null default 'auto'::text,
+  updated_at timestamp with time zone null default now(),
+  whatsapp_number text null default '+5521999062880'::text,
+  theme text null default 'light'::text,
+  shop_name text null default 'BarberQueue'::text,
+  logo_url text null,
+  webhook_url text null,
+  tracking_url_base text null,
+  base_queue_time smallint null,
+  max_queue_time text null,
+  constraint shop_settings_pkey primary key (id),
+  constraint shop_settings_manual_status_check check (
+    (
+      manual_status = any (array['auto'::text, 'open'::text, 'closed'::text])
+    )
+  ),
+  constraint shop_settings_theme_check check (
+    (theme = any (array['light'::text, 'dark'::text]))
+  )
+) TABLESPACE pg_default;
 
 -- Initial Shop Settings Data
-INSERT INTO shop_settings (whatsapp_number, theme, shop_name)
-SELECT '+5521999062880', 'light', 'BarberQueue'
-WHERE NOT EXISTS (SELECT 1 FROM shop_settings)
-LIMIT 1;
+INSERT INTO "public"."shop_settings" ("id", "manual_status", "updated_at", "whatsapp_number", "theme", "shop_name", "logo_url", "webhook_url", "tracking_url_base", "base_queue_time", "max_queue_time") VALUES ('8af2b68d-f970-41b2-b5ef-32b086db69bd', 'auto', '2026-03-29 20:21:17.552291+00', '+5521999062880', 'dark', 'Don Cabellone', 'https://mgvkygjydujtoqubgwmc.supabase.co/storage/v1/object/public/logos/logo-1776533077248.jpg', 'https://n8ndes.ltech.app.br/webhook/notificacao', 'https://www.doncabellone.com.br/', 30, '19:00');
 
 -- Initial Schedule Data
-INSERT INTO barbershop_schedule (weekday, open_time, close_time, is_closed) VALUES
-(0, NULL, NULL, true),
-(1, '09:00', '19:00', false),
-(2, '09:00', '19:00', false),
-(3, '09:00', '19:00', false),
-(4, '09:00', '19:00', false),
-(5, '09:00', '19:00', false),
-(6, '09:00', '14:00', false)
-ON CONFLICT (weekday) DO NOTHING;
+INSERT INTO "public"."barbershop_schedule" ("id", "weekday", "open_time", "close_time", "is_closed") VALUES ('303420a2-bfa2-4be4-83d7-357a7496261f', 3, '09:00:00', '18:00:00', false), ('37f400ad-63a1-4535-ad06-b82ab141b83c', 5, '09:00:00', '18:00:00', false), ('3bec7d66-7b91-45b0-b26f-c3ccf281d4e1', 0, '17:04:00', '22:04:00', true), ('40cbf2d7-d3a7-4f77-9f10-a6bcca7b382d', 2, '09:00:00', '18:00:00', false), ('46d09e45-6176-454d-95fc-e5568a9eb851', 4, '09:00:00', '18:00:00', false), ('c6bb2f17-5df3-4ca3-9bf9-28e0c79383c6', 1, '09:00:00', '19:00:00', true), ('ec0f195f-3a9a-441f-892c-538814970443', 6, '08:00:00', '17:00:00', false);
 
 -- Enable Realtime for Queue table
 ALTER PUBLICATION supabase_realtime ADD TABLE queue;
@@ -84,12 +101,3 @@ ALTER PUBLICATION supabase_realtime ADD TABLE shop_settings;
 ALTER TABLE IF EXISTS queue
   ADD COLUMN IF NOT EXISTS last_update_sent_at TIMESTAMPTZ,
   ADD COLUMN IF NOT EXISTS last_sent_eta INTEGER;
-
--- STORAGE POLICIES (Run these to fix upload errors)
--- Note: Replace 'logos' with your bucket name if different
-
--- 1. Allow public uploads to 'logos' bucket
--- CREATE POLICY "Public Upload" ON storage.objects FOR INSERT TO public WITH CHECK (bucket_id = 'logos');
-
--- 2. Allow public reads from 'logos' bucket
--- CREATE POLICY "Public Read" ON storage.objects FOR SELECT TO public USING (bucket_id = 'logos');

@@ -1,4 +1,5 @@
 import {
+  AlertTriangle,
   ArrowDown,
   ArrowRight,
   CircleAlert,
@@ -40,6 +41,7 @@ export default function Home() {
     return localStorage.getItem("barber_customer_name") || "";
   });
   const [loading, setLoading] = useState(false);
+  const [showConfirmDialog, setShowConfirmDialog] = useState(false);
   const { isOpen, message, loading: statusLoading } = useShopStatus();
   const queueCount = useQueueCount();
   const navigate = useNavigate();
@@ -60,7 +62,12 @@ export default function Home() {
     fetchMaxTime();
   }, []);
 
-  const handleJoinSubmit = async (e: React.FormEvent) => {
+  const handleConfirmJoin = () => {
+    setShowConfirmDialog(false);
+    handleJoinSubmit(new Event("submit") as any);
+  };
+
+  const handleFormSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (phone.length !== 9 || !phone.startsWith("9")) {
       toast.error(
@@ -72,6 +79,10 @@ export default function Home() {
       toast.error("Por favor, insira seu nome");
       return;
     }
+    setShowConfirmDialog(true);
+  };
+
+  const handleJoinSubmit = async (e: React.FormEvent) => {
 
     setLoading(true);
     const fullPhone = `${ddd}${phone}`;
@@ -284,7 +295,7 @@ export default function Home() {
             </p>
           </div>
         ) : (
-          <form onSubmit={handleJoinSubmit} className="space-y-4">
+          <form onSubmit={handleFormSubmit} className="space-y-4">
             <div className="space-y-6 text-left">
               <div className="pt-2">
                 <label className="mb-2 block text-sm font-semibold text-neutral-300">
@@ -406,6 +417,48 @@ export default function Home() {
           Powered by {shopName} Tech
         </div>
       </motion.div>
+
+      {showConfirmDialog && (
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4"
+          onClick={() => setShowConfirmDialog(false)}
+        >
+          <motion.div
+            initial={{ scale: 0.9, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            className="w-full max-w-sm rounded-2xl bg-neutral-900 p-6 border border-neutral-800"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-center justify-center w-12 h-12 mx-auto mb-4 rounded-full bg-yellow-900/30">
+              <AlertTriangle className="w-6 h-6 text-yellow-400" />
+            </div>
+            <h3 className="mb-2 text-lg font-semibold text-white text-center">
+              Atenção
+            </h3>
+            <p className="mb-6 text-sm text-neutral-400 text-center">
+              O horário exibido é apenas uma <strong className="text-yellow-400">PREVISÃO</strong>, podendo sofrer variações para <strong className="text-yellow-400">MAIS</strong> ou para <strong className="text-yellow-400">MENOS</strong>.
+            </p>
+            <div className="flex gap-3">
+              <button
+                type="button"
+                onClick={() => setShowConfirmDialog(false)}
+                className="flex-1 h-12 rounded-xl border border-neutral-700 text-neutral-300 font-medium transition-colors hover:bg-neutral-800"
+              >
+                Cancelar
+              </button>
+              <button
+                type="button"
+                onClick={handleConfirmJoin}
+                className="flex-1 h-12 rounded-xl bg-emerald-600 text-white font-medium transition-colors hover:bg-emerald-700"
+              >
+                Entendi
+              </button>
+            </div>
+          </motion.div>
+        </motion.div>
+      )}
     </div>
   );
 }

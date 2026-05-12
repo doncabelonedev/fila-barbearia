@@ -101,3 +101,16 @@ ALTER PUBLICATION supabase_realtime ADD TABLE shop_settings;
 ALTER TABLE IF EXISTS queue
   ADD COLUMN IF NOT EXISTS last_update_sent_at TIMESTAMPTZ,
   ADD COLUMN IF NOT EXISTS last_sent_eta INTEGER;
+
+-- 7. Campaigns Table
+create table IF NOT EXISTS public.campaigns (
+  id uuid not null default gen_random_uuid (),
+  title text not null,
+  message text not null,
+  recipient_count integer not null default 0,
+  created_at timestamp with time zone null default now(),
+  constraint campaigns_pkey primary key (id)
+) TABLESPACE pg_default;
+
+-- Disable RLS for campaigns (admin-only access via service role)
+ALTER TABLE public.campaigns DISABLE ROW LEVEL SECURITY;

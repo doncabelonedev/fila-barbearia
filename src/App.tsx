@@ -22,13 +22,12 @@ import { ShopSettingsProvider } from "./hooks/useShopSettings";
 function SessionManager({ children }: { children: React.ReactNode }) {
   const navigate = useNavigate();
   const location = useLocation();
-  const queueId = localStorage.getItem("barber_queue_id");
 
   useEffect(() => {
-    // Não redireciona se estiver nas páginas de admin
     if (location.pathname.startsWith("/admin")) return;
 
     async function checkSession() {
+      const queueId = localStorage.getItem("barber_queue_id");
       if (!queueId) return;
 
       const { data, error } = await supabase
@@ -37,20 +36,19 @@ function SessionManager({ children }: { children: React.ReactNode }) {
         .eq("id", queueId)
         .single();
 
-      // Se houver um erro, verifica se é apenas uma falha de rede temporária (ex: volta do background).
-      // O Supabase retorna PGRST116 quando o registro não é encontrado de fato.
       if (error && error.code !== "PGRST116") {
         return;
       }
 
       if (error || !data) {
-        // Se o registro não existir mais, limpa a sessão
         localStorage.removeItem("barber_queue_id");
         localStorage.removeItem("barber_queue_code");
+        if (location.pathname !== "/") {
+          navigate("/");
+        }
         return;
       }
 
-      // Lógica de redirecionamento automático baseada no status
       if (data.status === "waiting") {
         if (location.pathname !== "/queue" && location.pathname !== "/join") {
           navigate("/queue");
@@ -60,8 +58,6 @@ function SessionManager({ children }: { children: React.ReactNode }) {
           navigate("/in-service");
         }
       } else if (data.status === "completed" || data.status === "cancelled") {
-        // Se o atendimento acabou, apenas limpa o storage
-        // Não força o redirecionamento para '/' se o usuário já estiver tentando entrar novamente
         localStorage.removeItem("barber_queue_id");
         localStorage.removeItem("barber_queue_code");
 
@@ -75,7 +71,18 @@ function SessionManager({ children }: { children: React.ReactNode }) {
     }
 
     checkSession();
-  }, [queueId, location.pathname, navigate]);
+
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === "visible") {
+        checkSession();
+      }
+    };
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+
+    return () => {
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
+    };
+  }, [location.pathname, navigate]);
 
   return <>{children}</>;
 }

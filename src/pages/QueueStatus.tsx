@@ -27,8 +27,6 @@ export default function QueueStatus() {
 
   const [estimatedTimeStr, setEstimatedTimeStr] = useState("Agora");
 
-  const queueId = localStorage.getItem("barber_queue_id");
-
   useEffect(() => {
     let mounted = true;
 
@@ -47,19 +45,25 @@ export default function QueueStatus() {
   }, [position]);
 
   useEffect(() => {
-    if (!queueId) {
-      navigate("/");
-      return;
-    }
+    let mounted = true;
+    let isCurrentlyServing = false;
 
     async function fetchStatus() {
+      const queueId = localStorage.getItem("barber_queue_id");
+
+      if (!queueId) {
+        navigate("/");
+        return;
+      }
+
       const { data, error } = await supabase
         .from("queue")
         .select("*, customer:customer_id(*)")
         .eq("id", queueId)
         .single();
 
-      // Ignora erros temporários de rede (ex: quando o app volta do background sem internet)
+      if (!mounted) return;
+
       if (error && error.code !== "PGRST116") {
         return;
       }
@@ -68,6 +72,7 @@ export default function QueueStatus() {
         console.error("Error fetching queue status:", error);
         toast.error("Não foi possível encontrar seu lugar na fila.");
         localStorage.removeItem("barber_queue_id");
+        localStorage.removeItem("barber_queue_code");
         navigate("/");
         return;
       }
@@ -85,6 +90,7 @@ export default function QueueStatus() {
       }
 
       if (data.status === "serving") {
+        isCurrentlyServing = true;
         navigate("/in-service");
         return;
       }
@@ -118,7 +124,6 @@ export default function QueueStatus() {
 
     fetchStatus();
 
-    // Real-time subscription
     const channel = supabase
       .channel("queue_updates")
       .on("postgres_changes" as any, { event: "*", table: "queue" }, () => {
@@ -126,19 +131,28 @@ export default function QueueStatus() {
       })
       .subscribe();
 
-    // Polling fallback
     const pollInterval = setInterval(() => {
       fetchStatus();
     }, 5000);
 
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === "visible" && !isCurrentlyServing) {
+        fetchStatus();
+      }
+    };
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+
     return () => {
+      mounted = false;
       supabase.removeChannel(channel);
       clearInterval(pollInterval);
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
     };
-  }, [queueId, navigate]);
+  }, [navigate]);
 
   const handleLeave = async () => {
     try {
+      const queueId = localStorage.getItem("barber_queue_id");
       await supabase
         .from("queue")
         .update({ status: "cancelled" })

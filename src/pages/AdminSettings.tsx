@@ -35,6 +35,7 @@ export default function AdminSettings() {
     success: boolean;
     message: string;
   } | null>(null);
+  const [testEventType, setTestEventType] = useState<"JOINED" | "NEAR" | "NEXT" | "UPDATE" | "DELAYED">("DELAYED");
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
 
@@ -271,6 +272,7 @@ export default function AdminSettings() {
       const result = await webhookService.testWebhook(
         webhookUrl,
         trackingUrlBase,
+        testEventType,
       );
       setWebhookTestResult(result);
     } catch (error) {
@@ -451,6 +453,18 @@ export default function AdminSettings() {
                   placeholder="https://seu-webhook.com/endpoint"
                   className="flex-1 rounded-xl border border-neutral-700 bg-neutral-800 px-4 py-3 text-lg text-white outline-none focus:border-emerald-500 transition-all"
                 />
+                <select
+                  id="testEventType"
+                  value={testEventType}
+                  onChange={(e) => setTestEventType(e.target.value as any)}
+                  className="rounded-xl border border-neutral-700 bg-neutral-800 px-3 py-3 text-sm text-white outline-none focus:border-emerald-500 transition-all"
+                >
+                  <option value="JOINED">JOINED</option>
+                  <option value="NEAR">NEAR</option>
+                  <option value="NEXT">NEXT</option>
+                  <option value="UPDATE">UPDATE</option>
+                  <option value="DELAYED">DELAYED</option>
+                </select>
                 <button
                   onClick={handleTestWebhook}
                   disabled={isTestingWebhook || !webhookUrl}
@@ -468,7 +482,7 @@ export default function AdminSettings() {
               )}
               <p className="mt-2 text-xs text-neutral-500">
                 URL que receberá os eventos de atualização da fila (JOINED,
-                NEAR, NEXT).
+                NEAR, NEXT, UPDATE, DELAYED).
               </p>
             </div>
             <div>

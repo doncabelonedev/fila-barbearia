@@ -1,7 +1,7 @@
 import { QueueItem } from "../lib/supabase";
 import { calculateEstimatedServiceTimeDynamic } from "../hooks/useQueue";
 
-export type WebhookEvent = "JOINED" | "NEAR" | "NEXT" | "UPDATE";
+export type WebhookEvent = "JOINED" | "NEAR" | "NEXT" | "UPDATE" | "DELAYED";
 
 export interface WebhookPayload {
   type: "QUEUE_UPDATE";
@@ -26,22 +26,23 @@ class WebhookService {
   public async testWebhook(
     webhookUrl: string,
     trackingUrlBase: string,
+    event: WebhookEvent = "JOINED",
   ): Promise<{ success: boolean; message: string }> {
     if (!webhookUrl)
       return { success: false, message: "URL do webhook não configurada." };
 
     const payload: WebhookPayload = {
       type: "QUEUE_UPDATE",
-      event: "JOINED",
+      event,
       user: {
         name: "Cliente Teste",
         phone: "5511999999999",
       },
       queue: {
-        position: 1,
-        peopleAhead: 0,
-        etaMinutes: 0,
-        estimatedWait: "Agora",
+        position: 2,
+        peopleAhead: 1,
+        etaMinutes: 67,
+        estimatedWait: "10:30 e 10:45",
       },
       establishment: {
         name: "Barbearia Teste",

@@ -72,7 +72,14 @@ export default function AdminDashboard() {
   }, []);
 
   const playWaitingAlertSound = useCallback(() => {
-    const audio = new Audio("/alerta-fila-vazia.mp3");
+    const audio = new Audio("/alerta-fim-fila.mp3");
+    audio
+      .play()
+      .catch((err) => console.warn("Áudio bloqueado pelo navegador:", err));
+  }, []);
+
+  const playServingTimeoutSound = useCallback(() => {
+    const audio = new Audio("/alerta-fim-fila.mp3");
     audio
       .play()
       .catch((err) => console.warn("Áudio bloqueado pelo navegador:", err));
@@ -166,12 +173,39 @@ export default function AdminDashboard() {
     const hasServing = queue.some((item) => item.status === "serving");
     if (hasServing) return;
 
-    const interval = setInterval(() => {
-      playWaitingAlertSound();
-    }, 5 * 60 * 1000);
+    const interval = setInterval(
+      () => {
+        playWaitingAlertSound();
+      },
+      5 * 60 * 1000,
+    );
 
     return () => clearInterval(interval);
   }, [isAuthenticated, queue, playWaitingAlertSound]);
+
+  useEffect(() => {
+    if (!isAuthenticated || queue.length === 0) return;
+
+    const hasServing = queue.some((item) => item.status === "serving");
+    if (!hasServing) return;
+
+    const interval = setInterval(
+      () => {
+        const servingItem = queue.find((item) => item.status === "serving");
+        if (!servingItem?.service_start) return;
+
+        const startTime = new Date(servingItem.service_start).getTime();
+        const oneHourAgo = Date.now() - 60 * 60 * 1000;
+
+        if (startTime < oneHourAgo) {
+          playServingTimeoutSound();
+        }
+      },
+      5 * 60 * 1000,
+    );
+
+    return () => clearInterval(interval);
+  }, [isAuthenticated, queue, playServingTimeoutSound]);
 
   useEffect(() => {
     const auth = sessionStorage.getItem("barber_admin_auth");
@@ -840,7 +874,8 @@ export default function AdminDashboard() {
                         item.status === "serving"
                           ? 1
                           : servingCount + waitingIndex + 1;
-                      const estimatedTime = calculateEstimatedServiceTime(position);
+                      const estimatedTime =
+                        calculateEstimatedServiceTime(position);
                       const DraggableComponent = Draggable as any;
                       return (
                         <DraggableComponent
@@ -907,11 +942,19 @@ export default function AdminDashboard() {
                                       },
                                     )}
                                   </p>
-                                  {item.status === "serving" && item.service_start && (
-                                    <p className="text-xs text-emerald-400 mt-0.5 font-semibold">
-                                      Iniciou: {new Date(item.service_start).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit", second: "2-digit" })}
-                                    </p>
-                                  )}
+                                  {item.status === "serving" &&
+                                    item.service_start && (
+                                      <p className="text-xs text-emerald-400 mt-0.5 font-semibold">
+                                        Iniciou:{" "}
+                                        {new Date(
+                                          item.service_start,
+                                        ).toLocaleTimeString("pt-BR", {
+                                          hour: "2-digit",
+                                          minute: "2-digit",
+                                          second: "2-digit",
+                                        })}
+                                      </p>
+                                    )}
                                   <p className="text-xs text-neutral-500 mt-0.5">
                                     Previsto: {estimatedTime}
                                   </p>

@@ -388,11 +388,7 @@ export default function AdminCampaigns() {
                       }}
                     />
                   </div>
-                  <div className="flex justify-end mt-2">
-                    <svg className="h-4 w-4 text-[#005c4a]" viewBox="0 0 8 13">
-                      <path d="M0 0L8 0L8 8L4 13L0 8Z" />
-                    </svg>
-                  </div>
+                  <div className="flex justify-end mt-2"></div>
                   <p className="text-[#8696a0] text-xs text-right mt-1">
                     {new Date().toLocaleTimeString("pt-BR", {
                       hour: "2-digit",

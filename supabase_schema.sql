@@ -121,3 +121,7 @@ ALTER TABLE IF EXISTS public.queue ADD COLUMN IF NOT EXISTS service_duration INT
 -- Add parent_queue_id to link guest entries to the responsible customer's queue entry
 ALTER TABLE IF EXISTS public.queue
   ADD COLUMN IF NOT EXISTS parent_queue_id UUID REFERENCES public.queue(id);
+
+-- Add selected_services to store which services were chosen for each queue entry
+ALTER TABLE IF EXISTS public.queue
+  ADD COLUMN IF NOT EXISTS selected_services TEXT[] DEFAULT '{}';

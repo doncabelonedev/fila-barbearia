@@ -235,6 +235,7 @@ export default function Home() {
             position: nextPosition,
             status: "waiting",
             service_duration: mainDuration,
+            selected_services: mainServices,
           },
         ])
         .select("*, customer:customer_id(*)")
@@ -265,6 +266,7 @@ export default function Home() {
             position: nextPosition + i,
             status: "waiting",
             service_duration: guestDuration,
+            selected_services: guestServices,
             parent_queue_id: queueEntry.id,
           },
         ]);

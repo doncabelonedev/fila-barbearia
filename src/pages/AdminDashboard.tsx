@@ -538,6 +538,10 @@ export default function AdminDashboard() {
   };
 
   const handleStartService = async (item: QueueItem) => {
+    if (isLunchPaused) {
+      toast.error("Desative o modo almoço antes de iniciar um atendimento.");
+      return;
+    }
     if (processingId) return;
     setProcessingId(item.id);
     try {

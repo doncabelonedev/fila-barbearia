@@ -6,6 +6,27 @@ Sistema de fila para barbearia com gerenciamento via dashboard admin e check-in 
 
 ---
 
+## Fluxo do Cliente (App Web)
+
+### 1. Home (`/`) — Entrada na Fila
+
+- URL: `https://www.doncabellone.com.br`
+- Campos: **Nome** e **Telefone**
+- Informações exibidas abaixo dos campos: **posição estimada** e **horário estimado**
+- Botão: "Entrar na fila"
+- Ao clicar, abre um **dialog informativo** avisando que o horário estimado pode variar para mais ou para menos
+- Botão no dialog para **confirmar** e efetivamente entrar na fila
+
+### 2. Queue (`/queue`) — Status na Fila
+
+- Exibe: **código da fila**, **posição na fila**
+- Horário estimado de atendimento: exibido a partir da 3ª posição (quando há pessoas suficiente na frente para estimar)
+- Botões: seguir no **Instagram**, chamar no **WhatsApp**
+- Informações adicionais
+- Botão: **sair da fila**
+
+---
+
 ## Tabelas do Banco de Dados
 
 ### 1. `customers`

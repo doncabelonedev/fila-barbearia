@@ -19,6 +19,19 @@ import RemoveConfirmModal from "../components/admin/RemoveConfirmModal";
 import StatsCards from "../components/admin/StatsCards";
 import { DropResult } from "@hello-pangea/dnd";
 
+async function updateShopSettings(patch: Record<string, unknown>) {
+  const { data: current } = await supabase
+    .from("shop_settings")
+    .select("id")
+    .limit(1)
+    .maybeSingle();
+  if (current) {
+    await supabase.from("shop_settings").update(patch).eq("id", current.id);
+  } else {
+    await supabase.from("shop_settings").insert([patch]);
+  }
+}
+
 export default function AdminDashboard() {
   const navigate = useNavigate();
   const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -215,21 +228,7 @@ export default function AdminDashboard() {
     }
 
     try {
-      const { data: current } = await supabase
-        .from("shop_settings")
-        .select("id")
-        .limit(1)
-        .maybeSingle();
-      if (current) {
-        await supabase
-          .from("shop_settings")
-          .update({ manual_status: newStatus })
-          .eq("id", current.id);
-      } else {
-        await supabase
-          .from("shop_settings")
-          .insert([{ manual_status: newStatus }]);
-      }
+      await updateShopSettings({ manual_status: newStatus });
       setManualStatus(newStatus);
       const id = toast.success(
         `Fila em modo ${newStatus === "auto" ? "Automático" : newStatus === "open" ? "Aberto" : "Fechado"}`,
@@ -248,28 +247,15 @@ export default function AdminDashboard() {
         toast.error("Encerre a pré-abertura antes de ativar o horário de almoço.");
         return;
       }
-      if (manualStatus === "auto" && !isShopOpen) {
+      const isQueueOpen = manualStatus === "open" || (manualStatus === "auto" && !!isShopOpen);
+      if (!isQueueOpen) {
         toast.error("A barbearia precisa estar aberta para ativar o horário de almoço.");
         return;
       }
     }
     const newValue = !isLunchPaused;
     try {
-      const { data: current } = await supabase
-        .from("shop_settings")
-        .select("id")
-        .limit(1)
-        .maybeSingle();
-      if (current) {
-        await supabase
-          .from("shop_settings")
-          .update({ is_lunch_paused: newValue })
-          .eq("id", current.id);
-      } else {
-        await supabase
-          .from("shop_settings")
-          .insert([{ is_lunch_paused: newValue }]);
-      }
+      await updateShopSettings({ is_lunch_paused: newValue });
       setIsLunchPaused(newValue);
 
       const currentBaseTime = baseQueueTime == null ? 30 : baseQueueTime;
@@ -334,21 +320,7 @@ export default function AdminDashboard() {
     }
     const newValue = !isPreOpening;
     try {
-      const { data: current } = await supabase
-        .from("shop_settings")
-        .select("id")
-        .limit(1)
-        .maybeSingle();
-      if (current) {
-        await supabase
-          .from("shop_settings")
-          .update({ is_pre_opening: newValue })
-          .eq("id", current.id);
-      } else {
-        await supabase
-          .from("shop_settings")
-          .insert([{ is_pre_opening: newValue }]);
-      }
+      await updateShopSettings({ is_pre_opening: newValue });
       setIsPreOpening(newValue);
 
       const currentBaseTime = baseQueueTime == null ? 30 : baseQueueTime;

@@ -265,6 +265,7 @@ export default function Home() {
             position: nextPosition + i,
             status: "waiting",
             service_duration: guestDuration,
+            parent_queue_id: queueEntry.id,
           },
         ]);
         if (guestQueueErr) throw guestQueueErr;
@@ -278,8 +279,8 @@ export default function Home() {
       webhookService.sendWebhook(
         "JOINED",
         queueEntry,
-        nextPosition,
-        nextPosition - 1,
+        queueCount + 1,
+        queueCount,
         mainDuration,
         shopName,
         webhookUrl,

@@ -63,6 +63,7 @@ export type QueueItem = {
   service_end?: string;
   customer?: Customer;
   service_duration?: number;
+  parent_queue_id?: string;
   notified_near?: boolean;
   notified_next?: boolean;
   last_update_sent_at?: string;

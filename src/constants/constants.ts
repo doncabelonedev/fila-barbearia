@@ -70,7 +70,7 @@ export const DDD_OPTIONS = [
 
 export const BARBER_SERVICES = [
   { id: "cabelo",      label: "Cabelo",          duration: 30 },
-  { id: "pezinho",     label: "Só o pezinho",    duration: 10 },
+  { id: "pezinho",     label: "Pezinho",          duration: 10 },
   { id: "barba",       label: "Barba",            duration: 30 },
   { id: "sobrancelha", label: "Sobrancelha",      duration: 5  },
 ] as const;

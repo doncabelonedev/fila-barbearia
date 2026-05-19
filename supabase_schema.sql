@@ -117,3 +117,7 @@ ALTER TABLE public.campaigns DISABLE ROW LEVEL SECURITY;
 
 -- Add service_duration to queue (duration in minutes for each entry)
 ALTER TABLE IF EXISTS public.queue ADD COLUMN IF NOT EXISTS service_duration INTEGER DEFAULT 30;
+
+-- Add parent_queue_id to link guest entries to the responsible customer's queue entry
+ALTER TABLE IF EXISTS public.queue
+  ADD COLUMN IF NOT EXISTS parent_queue_id UUID REFERENCES public.queue(id);

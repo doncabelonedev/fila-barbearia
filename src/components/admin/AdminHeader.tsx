@@ -1,4 +1,4 @@
-import { History, LogOut, Megaphone, Power, Scissors, Settings } from "lucide-react";
+import { History, LogOut, Megaphone, Power, Scissors, Settings, Users } from "lucide-react";
 
 interface AdminHeaderProps {
   shopName: string;
@@ -79,6 +79,13 @@ export default function AdminHeader({
             title="Campanhas"
           >
             <Megaphone className="h-6 w-6" />
+          </button>
+          <button
+            onClick={() => onNavigate("/admin/clients")}
+            className="rounded-xl p-2 text-neutral-400 hover:bg-neutral-800 transition-colors"
+            title="Clientes"
+          >
+            <Users className="h-6 w-6" />
           </button>
           <button
             onClick={() => onNavigate("/admin/settings")}

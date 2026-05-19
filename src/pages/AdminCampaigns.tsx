@@ -16,7 +16,7 @@ import {
   Trash2,
   X,
 } from "lucide-react";
-import { supabase } from "../lib/supabase";
+import { supabase, Campaign } from "../lib/supabase";
 import { useShopSettings } from "../hooks/useShopSettings";
 
 export default function AdminCampaigns() {
@@ -33,30 +33,33 @@ export default function AdminCampaigns() {
   const [searchSelected, setSearchSelected] = useState("");
   const [sending, setSending] = useState(false);
   const [loading, setLoading] = useState(true);
-  const [drafts, setDrafts] = useState<{ id: string; title: string; message: string; recipient_count: number; created_at: string }[]>([]);
-  const [sentCampaigns, setSentCampaigns] = useState<{ id: string; title: string; message: string; recipient_count: number; created_at: string }[]>([]);
+  const [drafts, setDrafts] = useState<Campaign[]>([]);
+  const [sentCampaigns, setSentCampaigns] = useState<Campaign[]>([]);
   const [showDrafts, setShowDrafts] = useState(false);
   const [showSent, setShowSent] = useState(false);
   const [savingDraft, setSavingDraft] = useState(false);
+  const [showForm, setShowForm] = useState(false);
   const { shopName, logoUrl } = useShopSettings();
 
   async function fetchDrafts() {
     const { data, error } = await supabase
-      .from("campaign_drafts")
-      .select("id, title, message, selected_contact_ids, created_at")
+      .from("campaigns")
+      .select("id, title, message, is_draft, selected_contact_ids, recipient_count, created_at, updated_at")
+      .eq("is_draft", true)
       .order("created_at", { ascending: false });
     if (error) {
       console.error("Error fetching drafts:", error);
     }
     if (data) {
-      setDrafts(data.map((d: { id: string; title: string; message: string; selected_contact_ids: string[]; created_at: string }) => ({ ...d, recipient_count: d.selected_contact_ids?.length || 0 })));
+      setDrafts(data.map((d: Campaign) => ({ ...d, recipient_count: d.selected_contact_ids?.length || 0 })));
     }
   }
 
   async function fetchSentCampaigns() {
     const { data, error } = await supabase
       .from("campaigns")
-      .select("id, title, message, recipient_count, created_at")
+      .select("id, title, message, is_draft, selected_contact_ids, recipient_count, created_at, updated_at")
+      .eq("is_draft", false)
       .order("created_at", { ascending: false });
     if (error) {
       console.error("Error fetching sent campaigns:", error);
@@ -116,10 +119,11 @@ export default function AdminCampaigns() {
     setSavingDraft(true);
     try {
       const { error } = await supabase
-        .from("campaign_drafts")
+        .from("campaigns")
         .insert({
           title: campaignTitle,
           message: messageText,
+          is_draft: true,
           selected_contact_ids: selectedContacts.map(c => c.id),
         });
 
@@ -143,7 +147,7 @@ export default function AdminCampaigns() {
 
   const handleDeleteDraft = async (draftId: string) => {
     try {
-      await supabase.from("campaign_drafts").delete().eq("id", draftId);
+      await supabase.from("campaigns").delete().eq("id", draftId);
       toast.success("Rascunho excluído!");
       fetchDrafts();
     } catch (error) {
@@ -259,6 +263,7 @@ export default function AdminCampaigns() {
       await supabase.from("campaigns").insert({
         title: campaignTitle,
         message: messageText,
+        is_draft: false,
         recipient_count: selectedContacts.length,
       });
 
@@ -298,141 +303,156 @@ export default function AdminCampaigns() {
           <h1 className="text-xl font-bold text-white">
             Campanhas de WhatsApp
           </h1>
-          <div className="flex items-center gap-2">
-            <button
-              onClick={() => { setShowDrafts(!showDrafts); setShowSent(false); }}
-              className={`flex items-center px-3 py-2 text-sm rounded-lg transition-colors ${showDrafts ? 'bg-emerald-600 text-white' : 'bg-neutral-800 text-neutral-400 hover:text-white hover:bg-neutral-700'}`}
-            >
-              <Save className="h-4 w-4 mr-2" />
-              Rascunhos ({drafts.length})
-            </button>
-            <button
-              onClick={() => { setShowSent(!showSent); setShowDrafts(false); }}
-              className={`flex items-center px-3 py-2 text-sm rounded-lg transition-colors ${showSent ? 'bg-emerald-600 text-white' : 'bg-neutral-800 text-neutral-400 hover:text-white hover:bg-neutral-700'}`}
-            >
-              <Send className="h-4 w-4 mr-2" />
-              Enviadas ({sentCampaigns.length})
-            </button>
-          </div>
+          <div />
         </div>
       </header>
 
-      {showDrafts && (
-        <div className="border-b border-neutral-800 bg-neutral-900/50">
-          <div className="mx-auto max-w-6xl p-4">
-            <div className="flex items-center justify-between mb-3">
-              <h2 className="text-lg font-bold text-white">Rascunhos Salvos</h2>
-              <button
-                onClick={() => setShowDrafts(false)}
-                className="text-neutral-400 hover:text-white"
-              >
-                <X className="h-5 w-5" />
-              </button>
+      <main className="mx-auto max-w-6xl p-4 space-y-6">
+        {/* Rascunhos */}
+        <div className="rounded-2xl bg-neutral-900 border border-neutral-800">
+          <button
+            onClick={() => setShowDrafts(!showDrafts)}
+            className="w-full flex items-center justify-between p-4 text-left"
+          >
+            <div className="flex items-center gap-2">
+              <Save className="h-5 w-5 text-neutral-400" />
+              <span className="font-bold text-white">Rascunhos</span>
+              <span className="text-xs bg-neutral-700 text-neutral-300 px-2 py-0.5 rounded-full">{drafts.length}</span>
             </div>
-            {drafts.length === 0 ? (
-              <p className="text-neutral-500 text-sm py-4 text-center">Nenhum rascunho salvo</p>
-            ) : (
-              <div className="max-h-64 overflow-y-auto pr-2">
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 pb-4">
-                  {drafts.map((draft) => (
-                    <div
-                      key={draft.id}
-                      className="bg-neutral-800 rounded-xl p-4 border border-neutral-700 hover:border-emerald-500 transition-colors"
-                    >
-                      <div className="flex items-start justify-between">
-                        <div className="flex-1 min-w-0">
-                          <h3 className="font-bold text-white truncate">{draft.title}</h3>
-                          <p className="text-xs text-neutral-500 mt-1">
-                            {new Date(draft.created_at).toLocaleString("pt-BR")}
-                          </p>
-                          <p className="text-sm text-neutral-400 mt-2 line-clamp-2">{draft.message}</p>
-                          <p className="text-xs text-emerald-500 mt-2">{draft.recipient_count} contatos</p>
-                        </div>
-                        <div className="flex flex-col gap-1 ml-2">
-                          <button
-                            onClick={() => handleLoadDraft(draft)}
-                            className="p-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg transition-colors"
-                            title="Carregar"
-                          >
-                            <ChevronRight className="h-4 w-4" />
-                          </button>
-                          <button
-                            onClick={() => handleDeleteDraft(draft.id)}
-                            className="p-2 bg-neutral-700 hover:bg-red-600 text-neutral-400 hover:text-white rounded-lg transition-colors"
-                            title="Excluir"
-                          >
-                            <Trash2 className="h-4 w-4" />
-                          </button>
+            <ChevronRight className={`h-5 w-5 text-neutral-400 transition-transform ${showDrafts ? 'rotate-90' : ''}`} />
+          </button>
+          {showDrafts && (
+            <div className="px-4 pb-4">
+              {drafts.length === 0 ? (
+                <p className="text-neutral-500 text-sm py-4 text-center">Nenhum rascunho salvo</p>
+              ) : (
+                <div className="max-h-64 overflow-y-auto pr-1">
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 pb-1">
+                    {drafts.map((draft) => (
+                      <div
+                        key={draft.id}
+                        className="bg-neutral-800 rounded-xl p-4 border border-neutral-700 hover:border-emerald-500 transition-colors"
+                      >
+                        <div className="flex items-start justify-between">
+                          <div className="flex-1 min-w-0">
+                            <h3 className="font-bold text-white truncate">{draft.title}</h3>
+                            <p className="text-xs text-neutral-500 mt-1">
+                              {new Date(draft.created_at).toLocaleString("pt-BR")}
+                            </p>
+                            <p className="text-sm text-neutral-400 mt-2 line-clamp-2">{draft.message}</p>
+                            <p className="text-xs text-emerald-500 mt-2">{draft.recipient_count} contatos</p>
+                          </div>
+                          <div className="flex flex-col gap-1 ml-2">
+                            <button
+                              onClick={() => { handleLoadDraft(draft); setShowForm(true); }}
+                              className="p-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg transition-colors"
+                              title="Carregar"
+                            >
+                              <ChevronRight className="h-4 w-4" />
+                            </button>
+                            <button
+                              onClick={() => handleDeleteDraft(draft.id)}
+                              className="p-2 bg-neutral-700 hover:bg-red-600 text-neutral-400 hover:text-white rounded-lg transition-colors"
+                              title="Excluir"
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </button>
+                          </div>
                         </div>
                       </div>
-                    </div>
-                  ))}
+                    ))}
+                  </div>
                 </div>
-              </div>
-            )}
-          </div>
-        </div>
-      )}
-
-      {showSent && (
-        <div className="border-b border-neutral-800 bg-neutral-900/50">
-          <div className="mx-auto max-w-6xl p-4">
-            <div className="flex items-center justify-between mb-3">
-              <h2 className="text-lg font-bold text-white">Campanhas Enviadas</h2>
-              <button
-                onClick={() => setShowSent(false)}
-                className="text-neutral-400 hover:text-white"
-              >
-                <X className="h-5 w-5" />
-              </button>
+              )}
             </div>
-            {sentCampaigns.length === 0 ? (
-              <p className="text-neutral-500 text-sm py-4 text-center">Nenhuma campanha enviada</p>
-            ) : (
-              <div className="max-h-64 overflow-y-auto pr-2">
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 pb-4">
-                  {sentCampaigns.map((campaign) => (
-                    <div
-                      key={campaign.id}
-                      className="bg-neutral-800 rounded-xl p-4 border border-neutral-700"
-                    >
-                      <div className="flex items-start justify-between">
-                        <div className="flex-1 min-w-0">
-                          <h3 className="font-bold text-white truncate">{campaign.title}</h3>
-                          <p className="text-xs text-neutral-500 mt-1">
-                            {new Date(campaign.created_at).toLocaleString("pt-BR")}
-                          </p>
-                          <p className="text-sm text-neutral-400 mt-2 line-clamp-2">{campaign.message}</p>
-                          <p className="text-xs text-emerald-500 mt-2">{campaign.recipient_count} contatos</p>
-                        </div>
-                        <div className="flex flex-col gap-1 ml-2">
-                          <button
-                            onClick={() => handleLoadDraft({ id: campaign.id, title: campaign.title, message: campaign.message })}
-                            className="p-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg transition-colors"
-                            title="Carregar"
-                          >
-                            <ChevronRight className="h-4 w-4" />
-                          </button>
-                          <button
-                            onClick={() => handleDeleteSentCampaign(campaign.id)}
-                            className="p-2 bg-neutral-700 hover:bg-red-600 text-neutral-400 hover:text-white rounded-lg transition-colors"
-                            title="Excluir"
-                          >
-                            <Trash2 className="h-4 w-4" />
-                          </button>
+          )}
+        </div>
+
+        {/* Enviadas */}
+        <div className="rounded-2xl bg-neutral-900 border border-neutral-800">
+          <button
+            onClick={() => setShowSent(!showSent)}
+            className="w-full flex items-center justify-between p-4 text-left"
+          >
+            <div className="flex items-center gap-2">
+              <Send className="h-5 w-5 text-neutral-400" />
+              <span className="font-bold text-white">Enviadas</span>
+              <span className="text-xs bg-neutral-700 text-neutral-300 px-2 py-0.5 rounded-full">{sentCampaigns.length}</span>
+            </div>
+            <ChevronRight className={`h-5 w-5 text-neutral-400 transition-transform ${showSent ? 'rotate-90' : ''}`} />
+          </button>
+          {showSent && (
+            <div className="px-4 pb-4">
+              {sentCampaigns.length === 0 ? (
+                <p className="text-neutral-500 text-sm py-4 text-center">Nenhuma campanha enviada</p>
+              ) : (
+                <div className="max-h-64 overflow-y-auto pr-1">
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 pb-1">
+                    {sentCampaigns.map((campaign) => (
+                      <div
+                        key={campaign.id}
+                        className="bg-neutral-800 rounded-xl p-4 border border-neutral-700"
+                      >
+                        <div className="flex items-start justify-between">
+                          <div className="flex-1 min-w-0">
+                            <h3 className="font-bold text-white truncate">{campaign.title}</h3>
+                            <p className="text-xs text-neutral-500 mt-1">
+                              {new Date(campaign.created_at).toLocaleString("pt-BR")}
+                            </p>
+                            <p className="text-sm text-neutral-400 mt-2 line-clamp-2">{campaign.message}</p>
+                            <p className="text-xs text-emerald-500 mt-2">{campaign.recipient_count} contatos</p>
+                          </div>
+                          <div className="flex flex-col gap-1 ml-2">
+                            <button
+                              onClick={() => { handleLoadDraft({ id: campaign.id, title: campaign.title, message: campaign.message }); setShowForm(true); }}
+                              className="p-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg transition-colors"
+                              title="Carregar"
+                            >
+                              <ChevronRight className="h-4 w-4" />
+                            </button>
+                            <button
+                              onClick={() => handleDeleteSentCampaign(campaign.id)}
+                              className="p-2 bg-neutral-700 hover:bg-red-600 text-neutral-400 hover:text-white rounded-lg transition-colors"
+                              title="Excluir"
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </button>
+                          </div>
                         </div>
                       </div>
-                    </div>
-                  ))}
+                    ))}
+                  </div>
                 </div>
-              </div>
-            )}
-          </div>
+              )}
+            </div>
+          )}
         </div>
-      )}
 
-      <main className="mx-auto max-w-6xl p-4">
-        <div className="flex flex-col lg:flex-row gap-6">
+        {/* Botão Nova Campanha */}
+        {!showForm && (
+          <button
+            onClick={() => setShowForm(true)}
+            className="w-full h-14 rounded-2xl bg-emerald-600 hover:bg-emerald-700 font-bold text-white transition-all flex items-center justify-center gap-2"
+          >
+            <Megaphone className="h-5 w-5" />
+            Nova Campanha
+          </button>
+        )}
+
+        {/* Formulário */}
+        {showForm && (
+        <div className="flex flex-col gap-4">
+          <div className="flex items-center justify-between">
+            <h2 className="text-lg font-bold text-white">Nova Campanha</h2>
+            <button
+              onClick={() => setShowForm(false)}
+              className="flex items-center gap-2 px-3 py-2 text-sm rounded-lg bg-neutral-800 text-neutral-400 hover:text-white hover:bg-neutral-700 transition-colors"
+            >
+              <X className="h-4 w-4" />
+              Cancelar
+            </button>
+          </div>
+          <div className="flex flex-col lg:flex-row gap-6">
           <div className="flex-1 space-y-6">
             <div className="rounded-2xl bg-neutral-900 p-6 border border-neutral-800 space-y-6">
               <div>
@@ -721,7 +741,9 @@ export default function AdminCampaigns() {
               </div>
             </div>
           </div>
+          </div>
         </div>
+        )}
       </main>
     </div>
   );

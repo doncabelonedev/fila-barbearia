@@ -45,6 +45,11 @@ export function useWebhookNotifications({
 
           if (lastPos === undefined) {
             notifiedPositionMap.current.set(item.id, position);
+            const etaMinutes = await calculateEstimatedMinutes(position);
+            await supabase
+              .from("queue")
+              .update({ last_sent_eta: etaMinutes })
+              .eq("id", item.id);
             continue;
           }
 

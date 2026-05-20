@@ -198,26 +198,78 @@ export default function AdminDashboard() {
     setEstimatedTimes(map);
   }, [queue]);
 
-  // Sound alerts
-  useEffect(() => {
-    if (!isAuthenticated || queue.length === 0) return;
-    if (queue.some((i) => i.status === "serving")) return;
-    const interval = setInterval(playWaitingAlertSound, 5 * 60 * 1000);
-    return () => clearInterval(interval);
-  }, [isAuthenticated, queue, playWaitingAlertSound]);
+  // Sound alerts — ref-based to avoid timer reset on every queue update
+  const queueRef = useRef(queue);
+  useEffect(() => { queueRef.current = queue; }, [queue]);
+
+  const waitingAlert = useRef({ active: false, lastAt: 0 });
+  const servingAlert = useRef({ active: false, lastAt: 0, servingId: null as string | null });
 
   useEffect(() => {
-    if (!isAuthenticated || queue.length === 0) return;
-    if (!queue.some((i) => i.status === "serving")) return;
-    const interval = setInterval(() => {
-      const servingItem = queue.find((i) => i.status === "serving");
-      if (!servingItem?.service_start) return;
-      const startTime = new Date(servingItem.service_start).getTime();
-      const durationMs = (servingItem.service_duration ?? 30) * 60 * 1000;
-      if (startTime < Date.now() - durationMs) playServingTimeoutSound();
-    }, 10 * 60 * 1000);
+    if (!isAuthenticated) return;
+
+    const check = () => {
+      const q = queueRef.current;
+      const now = Date.now();
+
+      const cond1 = q.length > 0 && !q.some((i) => i.status === "serving");
+      const s1 = waitingAlert.current;
+      const trigger1 = cond1 && (!s1.active || now - s1.lastAt >= 5 * 60 * 1000);
+      if (trigger1) {
+        playWaitingAlertSound();
+        const firstWaiting = q.find((i) => i.status === "waiting");
+        if (firstWaiting && webhookUrl) {
+          const waitingCount = q.filter((i) => i.status === "waiting").length;
+          webhookService.sendWebhook(
+            "BARBER_ALERT_NO_SERVICE",
+            firstWaiting,
+            firstWaiting.position,
+            waitingCount - 1,
+            baseQueueTime ?? 30,
+            shopName,
+            webhookUrl,
+            trackingUrlBase,
+          );
+        }
+        s1.lastAt = now;
+      }
+      s1.active = cond1;
+
+      const servingItem = q.find((i) => i.status === "serving");
+      const cond2 =
+        !!servingItem?.service_start &&
+        new Date(servingItem.service_start).getTime() +
+          (servingItem.service_duration ?? 30) * 60 * 1000 <
+          now;
+      const s2 = servingAlert.current;
+      const customerChanged = servingItem?.id !== s2.servingId;
+      const trigger2 =
+        cond2 && (!s2.active || customerChanged || now - s2.lastAt >= 10 * 60 * 1000);
+      if (trigger2 && servingItem) {
+        playServingTimeoutSound();
+        if (webhookUrl) {
+          webhookService.sendWebhook(
+            "BARBER_ALERT_OVERTIME",
+            servingItem,
+            0,
+            0,
+            baseQueueTime ?? 30,
+            shopName,
+            webhookUrl,
+            trackingUrlBase,
+          );
+        }
+        s2.lastAt = now;
+        s2.servingId = servingItem.id;
+      }
+      s2.active = cond2;
+    };
+
+    check();
+    const interval = setInterval(check, 30 * 1000);
     return () => clearInterval(interval);
-  }, [isAuthenticated, queue, playServingTimeoutSound]);
+  }, [isAuthenticated, playWaitingAlertSound, playServingTimeoutSound,
+      webhookUrl, shopName, baseQueueTime, trackingUrlBase]);
 
   // Webhook notifications (position changes, ETA drift, delays)
   useWebhookNotifications({

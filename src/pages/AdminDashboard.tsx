@@ -523,6 +523,49 @@ export default function AdminDashboard() {
             if (webhookSent) {
               await new Promise((r) => setTimeout(r, 500));
             }
+          } else {
+            // Position unchanged — check time-based ETA drift
+            try {
+              const etaMinutes = await calculateEstimatedMinutes(position);
+              const prevSentEta = (item as any).last_sent_eta;
+              const prevSentAt = (item as any).last_update_sent_at
+                ? new Date((item as any).last_update_sent_at)
+                : null;
+              const now = new Date();
+              const cooldownMs = 5 * 60 * 1000;
+              const etaDiff =
+                prevSentEta == null
+                  ? Infinity
+                  : Math.abs(etaMinutes - prevSentEta);
+              if (
+                etaDiff >= 10 &&
+                (prevSentAt == null ||
+                  now.getTime() - prevSentAt.getTime() >= cooldownMs)
+              ) {
+                const sent = await webhookService.sendWebhook(
+                  "UPDATE",
+                  item,
+                  position,
+                  peopleAhead,
+                  currentBaseTime,
+                  shopName,
+                  webhookUrl,
+                  trackingUrlBase,
+                );
+                if (sent) {
+                  await supabase
+                    .from("queue")
+                    .update({
+                      last_update_sent_at: now.toISOString(),
+                      last_sent_eta: etaMinutes,
+                    })
+                    .eq("id", item.id);
+                  await new Promise((r) => setTimeout(r, 500));
+                }
+              }
+            } catch (e) {
+              console.error("Erro ao processar ETA drift:", e);
+            }
           }
         }
       } finally {
@@ -600,6 +643,7 @@ export default function AdminDashboard() {
       }
     };
 
+    checkDelays();
     const interval = setInterval(checkDelays, 60 * 1000);
     return () => clearInterval(interval);
   }, [isAuthenticated, queue, baseQueueTime, shopName, webhookUrl, trackingUrlBase]);

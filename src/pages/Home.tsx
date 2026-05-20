@@ -20,6 +20,7 @@ import {
   useQueueCount,
   useShopStatus,
 } from "../hooks/useQueue";
+import { sanitizeNameInput } from "../lib/nameUtils";
 import { supabase } from "../lib/supabase";
 
 import {
@@ -455,7 +456,7 @@ export default function Home() {
                       type="text"
                       placeholder="Digite seu nome completo"
                       value={name}
-                      onChange={(e) => setName(e.target.value)}
+                      onChange={(e) => setName(sanitizeNameInput(e.target.value))}
                       className="h-14 w-full rounded-xl border border-neutral-800 bg-neutral-900 px-12 text-lg text-white shadow-sm transition-all focus:border-emerald-500 focus:ring-4 focus:ring-emerald-900/30 outline-none"
                       required
                     />

@@ -16,6 +16,7 @@ import { useEffect, useMemo, useState } from "react";
 import toast from "react-hot-toast";
 import { IMaskInput } from "react-imask";
 import { useNavigate } from "react-router-dom";
+import { sanitizeNameInput } from "../lib/nameUtils";
 import { supabase } from "../lib/supabase";
 
 interface ClientItem {
@@ -326,7 +327,7 @@ export default function AdminClients() {
                         <input
                           type="text"
                           value={editName}
-                          onChange={(e) => setEditName(e.target.value)}
+                          onChange={(e) => setEditName(sanitizeNameInput(e.target.value))}
                           className={phoneInputClass}
                           autoFocus
                         />
@@ -468,7 +469,7 @@ export default function AdminClients() {
                 <input
                   type="text"
                   value={newName}
-                  onChange={(e) => setNewName(e.target.value)}
+                  onChange={(e) => setNewName(sanitizeNameInput(e.target.value))}
                   onKeyDown={(e) => e.key === "Enter" && handleAdd()}
                   placeholder="Nome do cliente"
                   autoFocus

@@ -248,14 +248,8 @@ export default function QueueStatus() {
                   <div>
                     <p className="font-bold text-sm">Pausa para almoço</p>
                     <p className="text-sm opacity-90 mt-1">
-                      Estamos finalizando alguns atendimentos e em seguida
-                      entrarei no almoço. Barbearia estará fechada neste
-                      período. O horário estimado para seu atendimento será:{" "}
-                      <span className="font-bold">
-                        {estimatedTimeStr === "Agora"
-                          ? "a confirmar após o retorno"
-                          : estimatedTimeStr}
-                      </span>
+                      Estamos em pausa para o almoço. Assim que retornarmos,
+                      seu horário estimado será atualizado.
                     </p>
                   </div>
                 </div>
@@ -272,7 +266,7 @@ export default function QueueStatus() {
                 </div>
               )}
               <div
-                className={`grid ${peopleAhead > 0 ? "grid-cols-2" : "grid-cols-1"} gap-4`}
+                className={`grid ${peopleAhead > 0 && !isLunchPaused ? "grid-cols-2" : "grid-cols-1"} gap-4`}
               >
                 <div className="rounded-2xl bg-neutral-800 p-2 text-center border border-neutral-700">
                   <Users className="mx-auto mb-2 h-6 w-6 text-emerald-500" />
@@ -283,7 +277,7 @@ export default function QueueStatus() {
                     {position}
                   </p>
                 </div>
-                {peopleAhead > 0 && (
+                {peopleAhead > 0 && !isLunchPaused && (
                   <div className="rounded-2xl bg-neutral-800 p-4 text-center border border-neutral-700">
                     <Clock className="mx-auto mb-2 h-6 w-6 text-emerald-500" />
                     <p className="text-xs font-semibold uppercase text-neutral-500">

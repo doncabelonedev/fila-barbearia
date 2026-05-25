@@ -214,10 +214,24 @@ export default function AdminDashboard() {
   const waitingAlert = useRef({ active: false, lastAt: 0 });
   const servingAlert = useRef({ active: false, lastAt: 0, servingId: null as string | null });
 
+  const isBlockedRef = useRef(isPreOpening || isLunchPaused);
+  const queueActiveSinceRef = useRef<number>(0);
+  useEffect(() => {
+    const blocked = isPreOpening || isLunchPaused;
+    if (isBlockedRef.current && !blocked) {
+      queueActiveSinceRef.current = Date.now();
+      waitingAlert.current = { active: false, lastAt: 0 };
+      servingAlert.current = { active: false, lastAt: 0, servingId: null };
+    }
+    isBlockedRef.current = blocked;
+  }, [isPreOpening, isLunchPaused]);
+
   useEffect(() => {
     if (!isAuthenticated) return;
 
     const check = () => {
+      if (isBlockedRef.current) return;
+
       const q = queueRef.current;
       const now = Date.now();
       const FIVE_MIN = 5 * 60 * 1000;
@@ -230,8 +244,11 @@ export default function AdminDashboard() {
         const t = new Date(i.created_at).getTime();
         return t < min ? t : min;
       }, Infinity);
-      const waitingAgeMs = Number.isFinite(oldestWaitingTs)
-        ? now - oldestWaitingTs
+      const effectiveOldest = Number.isFinite(oldestWaitingTs)
+        ? Math.max(oldestWaitingTs, queueActiveSinceRef.current)
+        : Infinity;
+      const waitingAgeMs = Number.isFinite(effectiveOldest)
+        ? now - effectiveOldest
         : 0;
 
       const s1 = waitingAlert.current;

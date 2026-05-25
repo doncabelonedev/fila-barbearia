@@ -319,6 +319,10 @@ export default function Home() {
   const [estimatedTimeStr, setEstimatedTimeStr] = useState("Agora");
 
   useEffect(() => {
+    if (isPreOpening) {
+      setEstimatedTimeStr("");
+      return;
+    }
     let mounted = true;
     async function calc() {
       const eta = await calculateEstimatedServiceTimeDynamic(queueCount + 1);
@@ -543,7 +547,11 @@ export default function Home() {
               <button
                 type="submit"
                 disabled={loading}
-                className="mt-4 group relative flex h-14 w-full items-center justify-center rounded-2xl text-lg font-semibold text-white shadow-none transition-all active:scale-[0.98] disabled:opacity-70 bg-emerald-600 hover:bg-emerald-700"
+                className={`mt-4 group relative flex h-14 w-full items-center justify-center rounded-2xl text-lg font-semibold text-white shadow-none transition-all active:scale-[0.98] disabled:opacity-70 ${
+                  isPreOpening
+                    ? "bg-blue-600 hover:bg-blue-700"
+                    : "bg-emerald-600 hover:bg-emerald-700"
+                }`}
               >
                 {loading ? (
                   <Loader2 className="h-6 w-6 animate-spin" />

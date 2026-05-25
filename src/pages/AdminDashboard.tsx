@@ -179,6 +179,15 @@ export default function AdminDashboard() {
       setEstimatedTimes({});
       return;
     }
+    if (isPreOpening) {
+      const map: Record<string, string> = {};
+      for (const item of queue) {
+        map[item.id] =
+          item.status === "serving" ? "Agora" : "Aguardando abertura";
+      }
+      setEstimatedTimes(map);
+      return;
+    }
     const servingCount = queue.filter((i) => i.status === "serving").length;
     const waitingItems = queue
       .filter((i) => i.status === "waiting")
@@ -196,7 +205,7 @@ export default function AdminDashboard() {
       }
     }
     setEstimatedTimes(map);
-  }, [queue]);
+  }, [queue, isPreOpening]);
 
   // Sound alerts — ref-based to avoid timer reset on every queue update
   const queueRef = useRef(queue);
@@ -293,6 +302,7 @@ export default function AdminDashboard() {
     shopName,
     webhookUrl,
     trackingUrlBase,
+    isPreOpening,
   });
 
   // Queue CRUD actions
@@ -532,6 +542,7 @@ export default function AdminDashboard() {
           onRemove={(id) => setItemToRemove(id)}
           onAddCustomer={() => setShowAddModal(true)}
           loading={loading}
+          isPreOpening={isPreOpening}
         />
       </main>
 

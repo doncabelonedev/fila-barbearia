@@ -24,6 +24,7 @@ interface QueueListProps {
   onRemove: (id: string) => void;
   onAddCustomer: () => void;
   loading?: boolean;
+  isPreOpening?: boolean;
 }
 
 export default function QueueList({
@@ -40,6 +41,7 @@ export default function QueueList({
   onRemove,
   onAddCustomer,
   loading = false,
+  isPreOpening = false,
 }: QueueListProps) {
   return (
     <div className="space-y-4">
@@ -127,6 +129,7 @@ export default function QueueList({
                           onCompleteService={onCompleteService}
                           onRemove={onRemove}
                           isProcessing={!!processingId}
+                          isPreOpening={isPreOpening}
                         />
                       )}
                     </Draggable>

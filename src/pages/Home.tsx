@@ -548,9 +548,11 @@ export default function Home() {
                 type="submit"
                 disabled={loading}
                 className={`mt-4 group relative flex h-14 w-full items-center justify-center rounded-2xl text-lg font-semibold text-white shadow-none transition-all active:scale-[0.98] disabled:opacity-70 ${
-                  isPreOpening
-                    ? "bg-blue-600 hover:bg-blue-700"
-                    : "bg-emerald-600 hover:bg-emerald-700"
+                  isLunchPaused
+                    ? "bg-amber-500 hover:bg-amber-600"
+                    : isPreOpening
+                      ? "bg-blue-600 hover:bg-blue-700"
+                      : "bg-emerald-600 hover:bg-emerald-700"
                 }`}
               >
                 {loading ? (

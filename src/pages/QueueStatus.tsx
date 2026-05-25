@@ -291,7 +291,7 @@ export default function QueueStatus() {
               </div>
 
               <AnimatePresence>
-                {position !== null && position <= 3 && (
+                {position !== null && position <= 3 && !isLunchPaused && !isPreOpening && (
                   <motion.div
                     initial={{ opacity: 0, scale: 0.9 }}
                     animate={{ opacity: 1, scale: 1 }}

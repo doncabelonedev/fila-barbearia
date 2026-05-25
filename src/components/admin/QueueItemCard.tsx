@@ -30,12 +30,14 @@ const QueueItemCard = forwardRef<HTMLDivElement, QueueItemCardProps>(
       onCompleteService,
       onRemove,
       isProcessing,
+      ...rest
     },
     ref,
   ) => {
     return (
       <div
         ref={ref}
+        {...rest}
         className={`group relative flex items-center justify-between rounded-2xl border p-4 transition-all ${
           item.status === "serving"
             ? "bg-emerald-900/20 border-emerald-500/50 ring-2 ring-emerald-500/50"

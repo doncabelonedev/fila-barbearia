@@ -1,5 +1,13 @@
 # Contexto do Projeto - Agentes
 
+## n8n Skills (oficiais)
+
+Este projeto usa n8n. Ao trabalhar com workflows, nodes, expressões ou ferramentas
+do n8n MCP, sempre comece carregando a meta-skill `using-n8n-skills-official` e
+siga seu roteamento para a skill de capacidade correspondente antes de agir.
+
+---
+
 ## Visão Geral do Sistema
 
 Sistema de fila para barbearia com gerenciamento via dashboard admin e check-in via app web. Suporta múltiplas pessoas por entrada (convidados), modo almoço, modo pré-abertura e notificações automáticas via webhook (n8n → WhatsApp).

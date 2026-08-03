@@ -3,7 +3,7 @@
 ## n8n Skills (oficiais)
 
 Este projeto usa n8n. Ao trabalhar com workflows, nodes, expressões ou ferramentas
-do n8n MCP, sempre comece carregando a meta-skill `using-n8n-skills-official` e
+do n8n MCP, sempre comece carregando a meta-skill `using-n8n-mcp-skills` e
 siga seu roteamento para a skill de capacidade correspondente antes de agir.
 
 ---

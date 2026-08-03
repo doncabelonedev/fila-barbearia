@@ -1,0 +1,170 @@
+{
+  "name": "Barber Alert — Overtime (5min cron)",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "minutes"
+            }
+          ]
+        }
+      },
+      "id": "1288e3ef-13b1-45ef-9968-22d5cd5ce0e7",
+      "name": "Schedule 5min",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [736, -176]
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "WITH s AS (\n  SELECT shop_name, tracking_url_base\n  FROM public.shop_settings\n  LIMIT 1\n),\novertime_data AS (\n  SELECT\n    q.code,\n    q.service_duration,\n    EXTRACT(EPOCH FROM (now() - q.service_start))::int / 60 AS elapsed_min,\n    (EXTRACT(EPOCH FROM (now() - q.service_start))::int / 60) - q.service_duration AS overtime_min,\n    c.name AS customer_name\n  FROM public.queue q\n  LEFT JOIN public.customers c ON c.id = q.customer_id\n  WHERE q.status = 'serving'\n    AND q.service_start IS NOT NULL\n    AND q.service_duration IS NOT NULL\n    AND q.service_duration > 0\n    AND (now() - q.service_start) > make_interval(mins => q.service_duration)\n  LIMIT 1\n)\nSELECT\n  s.shop_name,\n  s.tracking_url_base,\n  EXISTS (SELECT 1 FROM overtime_data) AS has_overtime,\n  od.code,\n  od.service_duration,\n  od.elapsed_min,\n  od.overtime_min,\n  od.customer_name\nFROM s\nLEFT JOIN overtime_data od ON true;",
+        "options": {}
+      },
+      "id": "6fab8633-119c-455f-84f5-d47afa38cacd",
+      "name": "Query Overtime Serving",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.5,
+      "position": [960, -176],
+      "credentials": {
+        "postgres": {
+          "id": "uMvoklfk8laQ7yLw",
+          "name": "doncabelone des - olaszlucas"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "c1-hasovertime",
+              "leftValue": "={{ $json.has_overtime }}",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "looseTypeValidation": true,
+        "options": {}
+      },
+      "id": "abd6d82a-f589-4c86-a89a-cadac7230672",
+      "name": "Has Overtime?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [1184, -176]
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "a1-text",
+              "name": "text",
+              "value": "={{ '⚠️ *Alerta de Atraso — ' + $json.shop_name + '*\\n\\nHá um atendimento em atraso.\\n\\nCliente *' + ($json.customer_name || 'Cliente') + '* (' + $json.code + ') está em atendimento há *' + $json.elapsed_min + 'min*, mas o serviço planejado era de *' + $json.service_duration + 'min* (atraso de *' + $json.overtime_min + 'min*).\\n\\nAcesse o painel: ' + $json.tracking_url_base + 'admin' }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "e1b459b2-eb12-488c-ab6b-c0aff249d229",
+      "name": "Build Message",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [1408, -176]
+    },
+    {
+      "parameters": {
+        "resource": "Chatting",
+        "operation": "Send Text",
+        "session": "=default",
+        "chatId": "=120363407983624448@g.us",
+        "text": "={{ $json.text }}",
+        "linkPreview": false,
+        "requestOptions": {}
+      },
+      "type": "@devlikeapro/n8n-nodes-waha.WAHA",
+      "typeVersion": 202502,
+      "position": [1632, -176],
+      "id": "4fdd8182-a55a-4d10-940b-be93b091fb98",
+      "name": "Send a text message",
+      "credentials": {
+        "wahaApi": {
+          "id": "SnPbBDMOKqjxdZQo",
+          "name": "WAHA - doncabellone"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Schedule 5min": {
+      "main": [
+        [
+          {
+            "node": "Query Overtime Serving",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Query Overtime Serving": {
+      "main": [
+        [
+          {
+            "node": "Has Overtime?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Has Overtime?": {
+      "main": [
+        [
+          {
+            "node": "Build Message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build Message": {
+      "main": [
+        [
+          {
+            "node": "Send a text message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "versionId": "369a6b45-bb4f-4108-9e1b-62dca74e9ebc",
+  "meta": {
+    "instanceId": "d4e37845a647a12b6a7a035bf7160e477fe76eaff3797bfeee3c57876702d64d"
+  },
+  "id": "zfUwMM6OFR5Bun8C",
+  "tags": []
+}

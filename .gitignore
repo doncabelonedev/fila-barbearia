@@ -6,3 +6,6 @@ coverage/
 *.log
 .env*
 !.env.example
+
+# opencode skills (instaladas globalmente em ~/.agents/skills)
+.agents/

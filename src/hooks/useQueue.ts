@@ -177,7 +177,7 @@ export function calculateEstimatedServiceTimeFromEntries(
     const duration = servingEntry.service_duration ?? 30;
     const started = new Date(servingEntry.service_start);
     const projectedEnd = addMinutes(started, duration);
-    baseStart = projectedEnd.getTime() > now.getTime() ? projectedEnd : addMinutes(now, 10);
+    baseStart = projectedEnd.getTime() > now.getTime() ? projectedEnd : now;
   } else {
     baseStart = now;
   }
@@ -222,11 +222,7 @@ export async function calculateEstimatedServiceTimeDynamic(
       const duration = servingEntry.service_duration ?? 30;
       const started = new Date(servingEntry.service_start);
       const projectedEnd = addMinutes(started, duration);
-      if (projectedEnd.getTime() > now.getTime()) {
-        baseStart = projectedEnd;
-      } else {
-        baseStart = addMinutes(now, 10);
-      }
+      baseStart = projectedEnd.getTime() > now.getTime() ? projectedEnd : now;
     } else {
       baseStart = now;
     }
@@ -278,7 +274,7 @@ export async function calculateEstimatedMinutes(
         0,
         Math.round((now.getTime() - started.getTime()) / 60000),
       );
-      remainingCurrent = duration - elapsed > 0 ? duration - elapsed : 10;
+      remainingCurrent = Math.max(0, duration - elapsed);
     } else if (servingEntry) {
       remainingCurrent = servingEntry.service_duration ?? 30;
     }

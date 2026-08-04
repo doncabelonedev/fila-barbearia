@@ -26,7 +26,6 @@ export function useWebhookNotifications({
 }: Params) {
   const notifiedPositionMap = useRef<Map<string, number>>(new Map());
   const processingWebhooksRef = useRef(false);
-  const processingDelayRef = useRef(false);
 
   useEffect(() => {
     if (
@@ -206,66 +205,4 @@ export function useWebhookNotifications({
     processWebhooks();
   }, [queue, isAuthenticated, baseQueueTime, shopName, webhookUrl, trackingUrlBase, isPreOpening, isLunchPaused]);
 
-  useEffect(() => {
-    if (!isAuthenticated || !webhookUrl || isPreOpening || isLunchPaused) return;
-
-    const checkDelays = async () => {
-      if (processingDelayRef.current) return;
-      processingDelayRef.current = true;
-      try {
-        const servingItem = queue.find((i) => i.status === "serving");
-        if (!servingItem?.service_start) return;
-
-        const now = new Date();
-        const started = new Date(servingItem.service_start);
-        const elapsed = Math.round(
-          (now.getTime() - started.getTime()) / 60000,
-        );
-        const plannedDuration = servingItem.service_duration ?? 30;
-        if (elapsed <= plannedDuration) return;
-
-        const waitingItems = queue
-          .filter((i) => i.status === "waiting")
-          .sort((a, b) => a.position - b.position);
-        const cooldownMs = 10 * 60 * 1000;
-        const currentBaseTime = baseQueueTime ?? 30;
-
-        for (let i = 0; i < waitingItems.length; i++) {
-          const item = waitingItems[i];
-          const itemPosition = i + 2;
-          const peopleAhead = itemPosition - 1;
-          const lastDelaySent = item.last_delay_sent_at
-            ? new Date(item.last_delay_sent_at)
-            : null;
-
-          if (
-            lastDelaySent === null ||
-            now.getTime() - lastDelaySent.getTime() >= cooldownMs
-          ) {
-            await webhookService.sendWebhook(
-              "DELAYED",
-              item,
-              itemPosition,
-              peopleAhead,
-              currentBaseTime,
-              shopName,
-              webhookUrl,
-              trackingUrlBase,
-            );
-            await supabase
-              .from("queue")
-              .update({ last_delay_sent_at: now.toISOString() })
-              .eq("id", item.id);
-            await new Promise((r) => setTimeout(r, 500));
-          }
-        }
-      } finally {
-        processingDelayRef.current = false;
-      }
-    };
-
-    checkDelays();
-    const interval = setInterval(checkDelays, 60 * 1000);
-    return () => clearInterval(interval);
-  }, [isAuthenticated, queue, baseQueueTime, shopName, webhookUrl, trackingUrlBase, isPreOpening, isLunchPaused]);
 }

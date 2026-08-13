@@ -1,5 +1,5 @@
 {
-  "name": "Customer Delayed Notification (1min cron)",
+  "name": "Envia mensagem usuário sobre atraso no corte e atualiza tempo",
   "nodes": [
     {
       "parameters": {
@@ -11,11 +11,11 @@
           ]
         }
       },
-      "id": "25a7c1d4-8e32-4f9a-b6c1-7d3a9f5e2b10",
+      "id": "b6d8cda0-cdeb-42b2-a33e-5940042572b6",
       "name": "Schedule 1min",
       "type": "n8n-nodes-base.scheduleTrigger",
       "typeVersion": 1.2,
-      "position": [-960, 400]
+      "position": [2800, -480]
     },
     {
       "parameters": {
@@ -23,11 +23,11 @@
         "query": "SELECT\n  is_lunch_paused,\n  is_pre_opening,\n  manual_status,\n  tracking_url_base,\n  COALESCE(base_queue_time, 30) AS base_queue_time,\n  EXISTS(\n    SELECT 1 FROM public.queue\n    WHERE status = 'serving'\n      AND service_start IS NOT NULL\n      AND EXTRACT(EPOCH FROM now()) - EXTRACT(EPOCH FROM service_start) > COALESCE(service_duration, 30) * 60\n  ) AS has_overtime\nFROM public.shop_settings\nLIMIT 1",
         "options": {}
       },
-      "id": "c8d2f4a7-3e19-4b6c-9d5f-1a8c7b3e6f42",
+      "id": "b5531b44-9812-4448-bc95-a22d6f5634e2",
       "name": "Check Conditions",
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 2.5,
-      "position": [-720, 400],
+      "position": [3024, -480],
       "credentials": {
         "postgres": {
           "id": "uMvoklfk8laQ7yLw",
@@ -87,11 +87,12 @@
         "looseTypeValidation": true,
         "options": {}
       },
-      "id": "d9f3a6b2-1c54-4e87-9d23-8f1c4e7a3b56",
+      "id": "b839c376-be4a-496b-9bb8-44e48b02d338",
       "name": "Should Run?",
       "type": "n8n-nodes-base.if",
       "typeVersion": 2.2,
-      "position": [-480, 400]
+      "position": [3248, -480],
+      "disabled": true
     },
     {
       "parameters": {
@@ -99,11 +100,11 @@
         "query": "UPDATE public.queue\nSET service_duration = GREATEST(\n  COALESCE(service_duration, 30),\n  EXTRACT(EPOCH FROM (now() - service_start))::int / 60 + 10\n)\nWHERE status = 'serving'\n  AND service_start IS NOT NULL",
         "options": {}
       },
-      "id": "b1e5c7a3-9d4f-4b2e-8c1d-6a9f3e7b5c21",
+      "id": "81efae87-f497-4ad3-8c43-5b2ef50287df",
       "name": "Update Serving Duration",
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 2.5,
-      "position": [-360, 400],
+      "position": [3472, -480],
       "credentials": {
         "postgres": {
           "id": "uMvoklfk8laQ7yLw",
@@ -117,11 +118,11 @@
         "query": "SELECT\n  q.id AS queue_id,\n  q.code,\n  c.name AS customer_name,\n  c.phone,\n  ROW_NUMBER() OVER (ORDER BY q.position) AS waiting_index,\n  (SELECT tracking_url_base FROM public.shop_settings LIMIT 1) AS tracking_url_base,\n  COALESCE((SELECT base_queue_time FROM public.shop_settings LIMIT 1), 30) AS base_queue_time\nFROM public.queue q\nJOIN public.customers c ON c.id = q.customer_id\nWHERE q.status = 'waiting'\n  AND c.phone NOT LIKE 'manual_%'\n  AND (\n    q.last_delay_sent_at IS NULL\n    OR EXTRACT(EPOCH FROM now()) - EXTRACT(EPOCH FROM q.last_delay_sent_at) > 600\n  )\nORDER BY q.position",
         "options": {}
       },
-      "id": "4a7e2c9f-8b31-4d5e-a1f6-3c9d7b2e8a14",
+      "id": "d72a1d80-5f8e-473a-9e9d-e68f1a1dc8a9",
       "name": "Fetch Waiting Customers",
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 2.5,
-      "position": [-240, 400],
+      "position": [3696, -480],
       "credentials": {
         "postgres": {
           "id": "uMvoklfk8laQ7yLw",
@@ -161,22 +162,23 @@
         },
         "options": {}
       },
-      "id": "3f6a8d2e-9b14-4c7f-a3e5-1d6b2f4a8c90",
+      "id": "dd8ba4e1-4be6-4547-ba91-c4ad287f5787",
       "name": "Build WAHA Payload",
       "type": "n8n-nodes-base.set",
       "typeVersion": 3.4,
-      "position": [0, 400]
+      "position": [3920, -480]
     },
     {
       "parameters": {
         "batchSize": 1,
         "options": {}
       },
-      "id": "7b4e8c1f-3a29-4d5b-b6f7-2e9a3c8d1f45",
+      "id": "f6b85106-d495-4857-9d0b-892250602d76",
       "name": "Loop Over Items",
       "type": "n8n-nodes-base.splitInBatches",
       "typeVersion": 2,
-      "position": [240, 400]
+      "position": [4144, -480],
+      "disabled": true
     },
     {
       "parameters": {
@@ -190,15 +192,16 @@
       },
       "type": "@devlikeapro/n8n-nodes-waha.WAHA",
       "typeVersion": 202502,
-      "position": [480, 400],
-      "id": "5c2d9f7a-4b61-4e38-a7c4-8f3d1e5b2a67",
+      "position": [4368, -480],
+      "id": "0202015b-37bd-47b6-b589-19aa906b54e2",
       "name": "Send WAHA to Customer",
       "credentials": {
         "wahaApi": {
           "id": "SnPbBDMOKqjxdZQo",
           "name": "WAHA - doncabellone"
         }
-      }
+      },
+      "disabled": true
     },
     {
       "parameters": {
@@ -206,11 +209,11 @@
         "query": "UPDATE public.queue SET last_delay_sent_at = now() WHERE id = '{{ $('Build WAHA Payload').item.json.queue_id }}'",
         "options": {}
       },
-      "id": "8e1f4c6b-2d73-4a9f-b5c8-7f2a6d3e9b14",
+      "id": "71ce0a84-2572-470e-945c-49dd50ebb481",
       "name": "Update Cooldown",
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 2.5,
-      "position": [720, 400],
+      "position": [4592, -480],
       "credentials": {
         "postgres": {
           "id": "uMvoklfk8laQ7yLw",
@@ -315,10 +318,10 @@
     "executionOrder": "v1",
     "binaryMode": "separate"
   },
-  "versionId": "5e1a3d8b-7c29-4f6e-b9a2-1d4c8e5f3a67",
+  "versionId": "4874f14d-a4bb-41cb-9292-faa3e5591bd1",
   "meta": {
     "instanceId": "d4e37845a647a12b6a7a035bf7160e477fe76eaff3797bfeee3c57876702d64d"
   },
-  "id": "Gk9nM3vR7sQ2pT4w",
+  "id": "lXdN1ADFaHkkPjyZ",
   "tags": []
 }

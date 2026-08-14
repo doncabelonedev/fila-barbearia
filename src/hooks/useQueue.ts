@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { supabase, Schedule, ScheduleException } from "../lib/supabase";
+import { supabase, Schedule, ScheduleException, QueueItem } from "../lib/supabase";
 import { format, getDay, parseISO, addMinutes } from "date-fns";
 
 export function useShopStatus() {
@@ -133,6 +133,11 @@ export function useShopStatus() {
   return { isOpen, message, closeTime, loading };
 }
 
+export function timeToMinutes(time: string): number {
+  const [h, m] = time.split(":").map(Number);
+  return h * 60 + m;
+}
+
 function roundToNearest5(date: Date): Date {
   const d = new Date(date);
   const minutes = d.getMinutes();
@@ -163,10 +168,10 @@ export function calculateEstimatedServiceTime(
 
 export function calculateEstimatedServiceTimeFromEntries(
   posicaoNaFila: number,
-  activeEntries: { status: string; service_start?: string | null; service_duration?: number | null }[],
+  activeEntries: QueueItem[],
 ): string {
   const now = new Date();
-  const servingEntry = activeEntries.find((e) => e.status === "serving");
+  const servingEntry = activeEntries.find((e: QueueItem) => e.status === "serving");
   const servingCount = servingEntry ? 1 : 0;
 
   if (!servingEntry && posicaoNaFila <= 1) return "Agora";
@@ -182,13 +187,13 @@ export function calculateEstimatedServiceTimeFromEntries(
     baseStart = now;
   }
 
-  const waitingEntries = activeEntries.filter((e) => e.status === "waiting");
+  const waitingEntries = activeEntries.filter((e: QueueItem) => e.status === "waiting");
   const waitingAheadEntries = waitingEntries.slice(
     0,
     Math.max(0, posicaoNaFila - 1 - servingCount),
   );
   const shiftByMinutes = waitingAheadEntries.reduce(
-    (sum, e) => sum + (e.service_duration ?? 30),
+    (sum: number, e: QueueItem) => sum + (e.service_duration ?? 30),
     0,
   );
 
@@ -202,15 +207,17 @@ export async function calculateEstimatedServiceTimeDynamic(
   const now = new Date();
 
   try {
-    const { data: activeEntries } = await supabase
+    const { data } = await supabase
       .from("queue")
       .select("position, status, service_start, service_duration")
       .in("status", ["waiting", "serving"])
       .order("position", { ascending: true });
 
+    const activeEntries = data as QueueItem[] | null;
+
     if (!activeEntries || activeEntries.length === 0) return "Agora";
 
-    const servingEntry = activeEntries.find((e) => e.status === "serving");
+    const servingEntry = activeEntries.find((e: QueueItem) => e.status === "serving");
     const servingCount = servingEntry ? 1 : 0;
 
     if (!servingEntry && posicaoNaFila <= 1) return "Agora";
@@ -227,13 +234,13 @@ export async function calculateEstimatedServiceTimeDynamic(
       baseStart = now;
     }
 
-    const waitingEntries = activeEntries.filter((e) => e.status === "waiting");
+    const waitingEntries = activeEntries.filter((e: QueueItem) => e.status === "waiting");
     const waitingAheadEntries = waitingEntries.slice(
       0,
       Math.max(0, posicaoNaFila - 1 - servingCount),
     );
     const shiftByMinutes = waitingAheadEntries.reduce(
-      (sum, e) => sum + (e.service_duration ?? 30),
+      (sum: number, e: QueueItem) => sum + (e.service_duration ?? 30),
       0,
     );
 
@@ -251,15 +258,17 @@ export async function calculateEstimatedMinutes(
   if (posicaoNaFila <= 0) return 0;
 
   try {
-    const { data: activeEntries } = await supabase
+    const { data } = await supabase
       .from("queue")
       .select("position, status, service_start, service_duration")
       .in("status", ["waiting", "serving"])
       .order("position", { ascending: true });
 
+    const activeEntries = data as QueueItem[] | null;
+
     if (!activeEntries) return 0;
 
-    const servingEntry = activeEntries.find((e) => e.status === "serving");
+    const servingEntry = activeEntries.find((e: QueueItem) => e.status === "serving");
     const servingCount = servingEntry ? 1 : 0;
 
     if (!servingEntry && posicaoNaFila <= 1) return 0;
@@ -279,13 +288,13 @@ export async function calculateEstimatedMinutes(
       remainingCurrent = servingEntry.service_duration ?? 30;
     }
 
-    const waitingEntries = activeEntries.filter((e) => e.status === "waiting");
+    const waitingEntries = activeEntries.filter((e: QueueItem) => e.status === "waiting");
     const waitingAheadEntries = waitingEntries.slice(
       0,
       Math.max(0, posicaoNaFila - 1 - servingCount),
     );
     const waitingMinutes = waitingAheadEntries.reduce(
-      (sum, e) => sum + (e.service_duration ?? 30),
+      (sum: number, e: QueueItem) => sum + (e.service_duration ?? 30),
       0,
     );
 

@@ -16,6 +16,7 @@ import toast from "react-hot-toast";
 import { useNavigate } from "react-router-dom";
 import {
   calculateEstimatedServiceTimeDynamic,
+  timeToMinutes,
   useQueueCount,
   useShopStatus,
 } from "../hooks/useQueue";
@@ -321,10 +322,15 @@ export default function Home() {
       clearInterval(interval);
     };
   }, [queueCount, isLunchPaused, isPreOpening]);
-  const isQueueFull =
-    estimatedTimeStr !== "Agora" &&
-    !!closeTime &&
-    estimatedTimeStr.split(" ")[0] > closeTime.slice(0, 5);
+  const isQueueFull = (() => {
+    if (!closeTime) return false;
+    const closeMinutes = timeToMinutes(closeTime);
+    const estimatedMinutes =
+      estimatedTimeStr === "Agora"
+        ? new Date().getHours() * 60 + new Date().getMinutes()
+        : timeToMinutes(estimatedTimeStr);
+    return estimatedMinutes >= closeMinutes;
+  })();
 
   if (statusLoading) {
     return (

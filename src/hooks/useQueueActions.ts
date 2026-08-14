@@ -83,6 +83,10 @@ export function useQueueActions({
         .from("queue")
         .update({ status: "serving", service_start: new Date().toISOString() })
         .eq("id", item.id);
+      await supabase
+        .from("queue")
+        .update({ notified_next: false, notified_near: false })
+        .eq("status", "waiting");
       toast.success(`Iniciou atendimento para ${item.customer?.name}`);
       await normalizeQueuePositions();
       await fetchQueue();
@@ -111,6 +115,10 @@ export function useQueueActions({
         { customer_id: item.customer_id, duration_minutes: duration },
       ]);
       toast.success(`Atendimento de ${item.customer?.name} finalizado!`);
+      await supabase
+        .from("queue")
+        .update({ notified_next: false, notified_near: false })
+        .eq("status", "waiting");
       await normalizeQueuePositions();
       await fetchQueue();
     } catch {

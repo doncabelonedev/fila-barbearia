@@ -42,7 +42,7 @@ export function useWebhookNotifications({
       try {
         const servingCount = queue.filter((i) => i.status === "serving").length;
         const waitingItems = queue
-          .filter((i) => i.status === "waiting")
+          .filter((i) => i.status === "waiting" && !i.parent_queue_id)
           .sort((a, b) => a.position - b.position);
         const currentBaseTime = baseQueueTime == null ? 30 : baseQueueTime;
 

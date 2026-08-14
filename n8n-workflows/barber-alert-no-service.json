@@ -1,0 +1,216 @@
+{
+  "name": "Barber Alert — No Service (5min cron)",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "minutes"
+            }
+          ]
+        }
+      },
+      "id": "147a5b8b-10df-4d12-b8a5-6df3cb729acc",
+      "name": "Schedule 5min",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [-688, 384]
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "WITH s AS (\n  SELECT manual_status, is_lunch_paused, is_pre_opening,\n         whatsapp_number, shop_name, tracking_url_base\n  FROM public.shop_settings\n  LIMIT 1\n),\nsched AS (\n  SELECT\n    COALESCE(se.is_closed, bs.is_closed) AS is_closed,\n    COALESCE(se.open_time, bs.open_time) AS open_time,\n    COALESCE(se.close_time, bs.close_time) AS close_time\n  FROM public.barbershop_schedule bs\n  LEFT JOIN public.schedule_exceptions se ON se.date = CURRENT_DATE\n  WHERE bs.weekday = EXTRACT(DOW FROM CURRENT_DATE)::int\n),\nshop_state AS (\n  SELECT COALESCE(\n    (SELECT\n      CASE\n        WHEN is_closed = true THEN false\n        WHEN open_time IS NULL OR close_time IS NULL THEN true\n        WHEN (now() AT TIME ZONE 'America/Sao_Paulo')::time\n             BETWEEN open_time AND close_time THEN true\n        ELSE false\n      END\n     FROM sched),\n    true\n  ) AS is_open\n),\nq AS (\n  SELECT\n    (SELECT COUNT(*) FROM public.queue WHERE status = 'serving') AS serving_count,\n    (SELECT COUNT(*) FROM public.queue WHERE status = 'waiting') AS waiting_count,\n    (SELECT COUNT(*) FROM public.queue\n       WHERE status = 'waiting' AND created_at <= now() - interval '5 minutes') AS waiting_5min_count,\n    (SELECT to_char(MIN(created_at), 'HH24:MI') FROM public.queue\n       WHERE status = 'waiting') AS oldest_waiting_at\n)\nSELECT s.manual_status, s.is_lunch_paused, s.is_pre_opening,\n       s.whatsapp_number, s.shop_name, s.tracking_url_base,\n       q.serving_count, q.waiting_count, q.waiting_5min_count, q.oldest_waiting_at,\n       sh.is_open\nFROM s CROSS JOIN q CROSS JOIN shop_state sh;",
+        "options": {}
+      },
+      "id": "1d4cf1b2-82fb-4d8d-8a8c-d1505d879c5d",
+      "name": "Query Shop + Queue",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.5,
+      "position": [-464, 384],
+      "credentials": {
+        "postgres": {
+          "id": "uMvoklfk8laQ7yLw",
+          "name": "doncabelone des - olaszlucas"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "c1-manual",
+              "leftValue": "={{ $json.manual_status }}",
+              "rightValue": "auto",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            },
+            {
+              "id": "c2-lunch",
+              "leftValue": "={{ $json.is_lunch_paused }}",
+              "operator": {
+                "type": "boolean",
+                "operation": "false",
+                "singleValue": true
+              }
+            },
+            {
+              "id": "c3-pre",
+              "leftValue": "={{ $json.is_pre_opening }}",
+              "operator": {
+                "type": "boolean",
+                "operation": "false",
+                "singleValue": true
+              }
+            },
+            {
+              "id": "c4-open",
+              "leftValue": "={{ $json.is_open }}",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            },
+            {
+              "id": "c5-serving",
+              "leftValue": "={{ $json.serving_count }}",
+              "rightValue": 0,
+              "operator": {
+                "type": "number",
+                "operation": "equals"
+              }
+            },
+            {
+              "id": "c6-wait5",
+              "leftValue": "={{ $json.waiting_5min_count }}",
+              "rightValue": 0,
+              "operator": {
+                "type": "number",
+                "operation": "gt"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "looseTypeValidation": true,
+        "options": {}
+      },
+      "id": "f2886095-1039-407d-8bfe-065720fc08f6",
+      "name": "Should Alert?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [-240, 384]
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "a2-text",
+              "name": "text",
+              "value": "={{ '⚠️ *Alerta de Fila — ' + $('Query Shop + Queue').item.json.shop_name + '*\\n\\nHá *' + $('Query Shop + Queue').item.json.waiting_count + '* pessoa(s) aguardando e ninguém em atendimento há mais de 5 minutos.\\n\\nCliente mais antigo esperando desde *' + $('Query Shop + Queue').item.json.oldest_waiting_at + '*.\\n\\nAcesse o painel: ' + $('Query Shop + Queue').item.json.tracking_url_base + 'admin'}}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "fb0a14d0-0e74-48cc-b252-9fc63927ef3b",
+      "name": "Build WAHA Payload",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [-16, 384]
+    },
+    {
+      "parameters": {
+        "resource": "Chatting",
+        "operation": "Send Text",
+        "session": "=default",
+        "chatId": "=120363407983624448@g.us",
+        "text": "={{ $json.text }}",
+        "linkPreview": false,
+        "requestOptions": {}
+      },
+      "type": "@devlikeapro/n8n-nodes-waha.WAHA",
+      "typeVersion": 202502,
+      "position": [208, 384],
+      "id": "f8df10fb-bd57-4b83-93dd-83dfc23b352f",
+      "name": "Send a text message",
+      "credentials": {
+        "wahaApi": {
+          "id": "SnPbBDMOKqjxdZQo",
+          "name": "WAHA - doncabellone"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Schedule 5min": {
+      "main": [
+        [
+          {
+            "node": "Query Shop + Queue",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Query Shop + Queue": {
+      "main": [
+        [
+          {
+            "node": "Should Alert?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Should Alert?": {
+      "main": [
+        [
+          {
+            "node": "Build WAHA Payload",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build WAHA Payload": {
+      "main": [
+        [
+          {
+            "node": "Send a text message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "versionId": "0c8993b6-7675-43e4-af48-ae4a5362f33d",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "d4e37845a647a12b6a7a035bf7160e477fe76eaff3797bfeee3c57876702d64d"
+  },
+  "id": "LpOuK1V5n1MmBE2E",
+  "tags": []
+}

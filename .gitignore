@@ -10,3 +10,4 @@ coverage/
 # opencode skills (instaladas globalmente em ~/.agents/skills)
 .agents/
 .opencode/
+.claude/

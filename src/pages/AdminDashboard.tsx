@@ -1,5 +1,4 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { format, getDay } from "date-fns";
 import toast from "react-hot-toast";
 import { useNavigate } from "react-router-dom";
 import {
@@ -33,39 +32,6 @@ async function updateShopSettings(patch: Record<string, unknown>) {
   }
 }
 
-// Envia o webhook de pré-abertura (start/end) para a fila atual.
-// Reusado pelo toggle manual e pelo auto-check de horário.
-async function sendPreOpeningWebhooks(
-  event: "PRE_OPENING_START" | "PRE_OPENING_END",
-  queue: QueueItem[],
-  baseTime: number | null,
-  shopName: string,
-  webhookUrl: string | null,
-  trackingUrlBase: string | null,
-) {
-  const currentBaseTime = baseTime == null ? 30 : baseTime;
-  const servingCount = queue.filter((i) => i.status === "serving").length;
-  const items =
-    event === "PRE_OPENING_START"
-      ? queue.filter((i) => i.status === "waiting" || i.status === "serving")
-      : queue
-          .filter((i) => i.status === "waiting")
-          .sort((a, b) => a.position - b.position);
-  for (let i = 0; i < items.length; i++) {
-    const pos = servingCount + i + 1;
-    await webhookService.sendWebhook(
-      event,
-      items[i],
-      pos,
-      pos - 1,
-      currentBaseTime,
-      shopName,
-      webhookUrl,
-      trackingUrlBase,
-    );
-  }
-}
-
 export default function AdminDashboard() {
   const navigate = useNavigate();
   const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -93,22 +59,6 @@ export default function AdminDashboard() {
   const { shopName, logoUrl, webhookUrl, trackingUrlBase, baseQueueTime } =
     useShopSettings();
   const { isOpen: isShopOpen } = useShopStatus();
-
-  // Snapshot dos valores usados pelo auto-check (evita closure velha no interval).
-  const autoRef = useRef({
-    queue,
-    baseQueueTime,
-    shopName,
-    webhookUrl,
-    trackingUrlBase,
-  });
-  autoRef.current = {
-    queue,
-    baseQueueTime,
-    shopName,
-    webhookUrl,
-    trackingUrlBase,
-  };
 
   const playUpdateSound = useCallback(() => {
     const audio = new Audio("/cash-register.mp3");
@@ -526,14 +476,6 @@ export default function AdminDashboard() {
     try {
       await updateShopSettings({ is_pre_opening: newValue });
       setIsPreOpening(newValue);
-      await sendPreOpeningWebhooks(
-        newValue ? "PRE_OPENING_START" : "PRE_OPENING_END",
-        queue,
-        baseQueueTime,
-        shopName,
-        webhookUrl,
-        trackingUrlBase,
-      );
       const id = toast.success(
         newValue ? "Modo pré-abertura ativado" : "Pré-abertura encerrada",
       );
@@ -542,100 +484,6 @@ export default function AdminDashboard() {
       toast.error("Falha ao atualizar modo pré-abertura");
     }
   };
-
-  // Auto-check de pré-abertura por horário (substitui o clique manual no botão).
-  // Liga X minutos antes do open_time do dia; desliga ao chegar no open_time
-  // e dispara PRE_OPENING_END. Mesmo padrão temporal do useShopStatus (loop 60s),
-  // pois cruzar um horário não gera evento de realtime.
-  const checkAutoPreOpening = useCallback(async () => {
-    const now = new Date();
-    const weekday = getDay(now);
-    const todayStr = format(now, "yyyy-MM-dd");
-    const nowMinutes = now.getHours() * 60 + now.getMinutes();
-
-    const { data: s } = await supabase
-      .from("shop_settings")
-      .select("manual_status, is_lunch_paused, is_pre_opening")
-      .limit(1)
-      .maybeSingle();
-    if (!s) return;
-
-    // Resolve open_time + is_closed + pré-abertura do dia
-    // (exceção tem prioridade sobre o semanal).
-    let isClosed = false;
-    let openTime: string | null = null;
-    let preMin = 0;
-    const { data: ex } = await supabase
-      .from("schedule_exceptions")
-      .select("is_closed, open_time, pre_opening_minutes")
-      .eq("date", todayStr)
-      .maybeSingle();
-    if (ex) {
-      isClosed = !!ex.is_closed;
-      openTime = ex.open_time;
-      preMin = ex.pre_opening_minutes ?? 0;
-    } else {
-      const { data: sch } = await supabase
-        .from("barbershop_schedule")
-        .select("is_closed, open_time, pre_opening_minutes")
-        .eq("weekday", weekday)
-        .maybeSingle();
-      if (sch) {
-        isClosed = !!sch.is_closed;
-        openTime = sch.open_time;
-        preMin = sch.pre_opening_minutes ?? 0;
-      }
-    }
-    if (isClosed || !openTime) return;
-
-    const [oh, om] = openTime.split(":").map(Number);
-    const openMinutes = oh * 60 + om;
-    const preStart = openMinutes - preMin;
-    const ref = autoRef.current;
-
-    // Ativar
-    if (
-      s.manual_status === "auto" &&
-      !s.is_lunch_paused &&
-      !s.is_pre_opening &&
-      preMin > 0 &&
-      nowMinutes >= preStart &&
-      nowMinutes < openMinutes
-    ) {
-      await updateShopSettings({ is_pre_opening: true });
-      setIsPreOpening(true);
-      await sendPreOpeningWebhooks(
-        "PRE_OPENING_START",
-        ref.queue,
-        ref.baseQueueTime,
-        ref.shopName,
-        ref.webhookUrl,
-        ref.trackingUrlBase,
-      );
-      return;
-    }
-
-    // Desativar
-    if (s.is_pre_opening && nowMinutes >= openMinutes) {
-      await updateShopSettings({ is_pre_opening: false });
-      setIsPreOpening(false);
-      await sendPreOpeningWebhooks(
-        "PRE_OPENING_END",
-        ref.queue,
-        ref.baseQueueTime,
-        ref.shopName,
-        ref.webhookUrl,
-        ref.trackingUrlBase,
-      );
-    }
-  }, []);
-
-  useEffect(() => {
-    if (!isAuthenticated) return;
-    checkAutoPreOpening();
-    const interval = setInterval(checkAutoPreOpening, 60000);
-    return () => clearInterval(interval);
-  }, [isAuthenticated, checkAutoPreOpening]);
 
   const handleLogout = () => {
     sessionStorage.removeItem("barber_admin_auth");

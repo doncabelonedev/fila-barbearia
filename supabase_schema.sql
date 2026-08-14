@@ -82,10 +82,10 @@ create table IF NOT EXISTS public.shop_settings (
   tracking_url_base text null,
   base_queue_time smallint null,
   max_queue_time text null,
-  constraint shop_settings_pkey primary key (id),
   is_lunch_paused boolean not null default false,
   is_pre_opening boolean not null default false,
   pre_opening_minutes smallint not null default 0,
+  constraint shop_settings_pkey primary key (id),
   constraint shop_settings_manual_status_check check (
     (
       manual_status = any (array['auto'::text, 'open'::text, 'closed'::text])

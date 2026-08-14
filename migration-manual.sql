@@ -46,3 +46,13 @@ ALTER TABLE public.barbershop_schedule
 
 ALTER TABLE public.schedule_exceptions
   ADD COLUMN IF NOT EXISTS pre_opening_minutes smallint not null default 0;
+
+
+-- =====================================
+-- Migração 14/08/2026 — Ajustes em shop_settings (colunas de pausa/preview)
+-- =====================================
+ALTER TABLE public.shop_settings
+  ADD COLUMN IF NOT EXISTS is_lunch_paused boolean not null default false;
+
+ALTER TABLE public.shop_settings
+  ADD COLUMN IF NOT EXISTS is_pre_opening boolean not null default false;

@@ -256,21 +256,6 @@ export default function AdminDashboard() {
         cond1 && waitingAgeMs >= FIVE_MIN && now - s1.lastAt >= FIVE_MIN;
       if (trigger1) {
         playWaitingAlertSound();
-        const firstWaiting = [...waitingItems].sort(
-          (a, b) => a.position - b.position,
-        )[0];
-        if (firstWaiting && webhookUrl) {
-          webhookService.sendWebhook(
-            "BARBER_ALERT_NO_SERVICE",
-            firstWaiting,
-            firstWaiting.position,
-            waitingItems.length - 1,
-            baseQueueTime ?? 30,
-            shopName,
-            webhookUrl,
-            trackingUrlBase,
-          );
-        }
         s1.lastAt = now;
       }
       s1.active = cond1;
@@ -287,18 +272,6 @@ export default function AdminDashboard() {
         cond2 && (!s2.active || customerChanged || now - s2.lastAt >= 10 * 60 * 1000);
       if (trigger2 && servingItem) {
         playServingTimeoutSound();
-        if (webhookUrl) {
-          webhookService.sendWebhook(
-            "BARBER_ALERT_OVERTIME",
-            servingItem,
-            0,
-            0,
-            baseQueueTime ?? 30,
-            shopName,
-            webhookUrl,
-            trackingUrlBase,
-          );
-        }
         s2.lastAt = now;
         s2.servingId = servingItem.id;
       }
@@ -308,8 +281,7 @@ export default function AdminDashboard() {
     check();
     const interval = setInterval(check, 30 * 1000);
     return () => clearInterval(interval);
-  }, [isAuthenticated, playWaitingAlertSound, playServingTimeoutSound,
-      webhookUrl, shopName, baseQueueTime, trackingUrlBase]);
+  }, [isAuthenticated, playWaitingAlertSound, playServingTimeoutSound]);
 
   // Webhook notifications (position changes, ETA drift, delays)
   useWebhookNotifications({

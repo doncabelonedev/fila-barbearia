@@ -24,6 +24,7 @@ import { sanitizeNameInput } from "../lib/nameUtils";
 import { supabase } from "../lib/supabase";
 
 import { DDD_OPTIONS, ServiceId } from "../constants/constants";
+import { useBarberServices } from "../hooks/useBarberServices";
 import { useShopSettings } from "../hooks/useShopSettings";
 import { webhookService } from "../services/webhookService";
 import ServiceSelectionDialog, {
@@ -83,6 +84,7 @@ export default function Home() {
   } = useShopStatus();
   const queueCount = useQueueCount();
   const navigate = useNavigate();
+  const { activeServices } = useBarberServices();
   const {
     shopName,
     logoUrl,
@@ -228,7 +230,8 @@ export default function Home() {
       const nextPosition = (lastEntry?.position || 0) + 1;
 
       const mainServices = servicesPerPerson[0] ?? (["cabelo"] as ServiceId[]);
-      const mainDuration = calculatePersonDuration(mainServices) || 30;
+      const mainDuration =
+        calculatePersonDuration(mainServices, activeServices) || 30;
 
       const { data: queueEntry, error: queueError } = await supabase
         .from("queue")
@@ -261,7 +264,8 @@ export default function Home() {
 
         const guestServices =
           servicesPerPerson[i] ?? (["cabelo"] as ServiceId[]);
-        const guestDuration = calculatePersonDuration(guestServices) || 30;
+        const guestDuration =
+          calculatePersonDuration(guestServices, activeServices) || 30;
 
         const { error: guestQueueErr } = await supabase.from("queue").insert([
           {
@@ -610,6 +614,7 @@ export default function Home() {
           personName={dialogStep === 0 ? name : `Convidado ${dialogStep}`}
           personIndex={dialogStep}
           totalPeople={numberOfPeople}
+          services={activeServices}
           selectedServices={servicesPerPerson[dialogStep]}
           loading={loading}
           onToggle={(id) => toggleService(dialogStep, id)}

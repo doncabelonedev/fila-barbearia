@@ -2,7 +2,7 @@ import { Check, GripVertical, MessageCircle, Play, Trash2 } from "lucide-react";
 import { forwardRef } from "react";
 import { DraggableProvidedDragHandleProps } from "@hello-pangea/dnd";
 import { QueueItem } from "../../lib/supabase";
-import { BARBER_SERVICES } from "../../constants/constants";
+import { useBarberServices } from "../../hooks/useBarberServices";
 
 interface QueueItemCardProps {
   item: QueueItem;
@@ -38,6 +38,7 @@ const QueueItemCard = forwardRef<HTMLDivElement, QueueItemCardProps>(
     },
     ref,
   ) => {
+    const { services } = useBarberServices();
     return (
       <div
         ref={ref}
@@ -91,7 +92,7 @@ const QueueItemCard = forwardRef<HTMLDivElement, QueueItemCardProps>(
             {item.selected_services && item.selected_services.length > 0 && (
               <div className="flex flex-wrap gap-1 mt-1">
                 {item.selected_services.map((svcId) => {
-                  const svc = BARBER_SERVICES.find((s) => s.id === svcId);
+                  const svc = services.find((s) => s.id === svcId);
                   const colorMap: Record<string, string> = {
                     cabelo:      "bg-sky-900/60 text-sky-300 ring-sky-700/60",
                     barba:       "bg-emerald-900/60 text-emerald-300 ring-emerald-700/60",

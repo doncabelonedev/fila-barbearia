@@ -2,6 +2,7 @@ import { Loader2 } from "lucide-react";
 import { useState } from "react";
 import toast from "react-hot-toast";
 import { DDD_OPTIONS, ServiceId } from "../../constants/constants";
+import { useBarberServices } from "../../hooks/useBarberServices";
 import { useQueueCount } from "../../hooks/useQueue";
 import { useShopSettings } from "../../hooks/useShopSettings";
 import { sanitizeNameInput } from "../../lib/nameUtils";
@@ -49,6 +50,7 @@ export default function AddCustomerForm({
   ]);
 
   const queueCount = useQueueCount();
+  const { activeServices } = useBarberServices();
   const {
     shopName,
     webhookUrl,
@@ -123,7 +125,8 @@ export default function AddCustomerForm({
       if (lastError) throw lastError;
 
       const nextPos = (last?.position || 0) + 1;
-      const duration = calculatePersonDuration(selectedServices) || 30;
+      const duration =
+        calculatePersonDuration(selectedServices, activeServices) || 30;
 
       const { data: queueEntry, error: queueError } = await supabase
         .from("queue")
@@ -249,6 +252,7 @@ export default function AddCustomerForm({
           personName={name}
           personIndex={0}
           totalPeople={1}
+          services={activeServices}
           selectedServices={selectedServices}
           loading={loading}
           onToggle={toggleService}

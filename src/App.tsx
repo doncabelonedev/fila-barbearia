@@ -19,6 +19,7 @@ import AdminCampaigns from "./pages/AdminCampaigns";
 import AdminClients from "./pages/AdminClients";
 import { Toaster } from "react-hot-toast";
 import { ShopSettingsProvider } from "./hooks/useShopSettings";
+import { BarberServicesProvider } from "./hooks/useBarberServices";
 
 // Componente para gerenciar a sessão global e redirecionamentos automáticos
 function SessionManager({ children }: { children: React.ReactNode }) {
@@ -114,7 +115,9 @@ export default function App() {
     <>
       <Toaster position="top-center" />
       <ShopSettingsProvider>
-        <AppContent />
+        <BarberServicesProvider>
+          <AppContent />
+        </BarberServicesProvider>
       </ShopSettingsProvider>
     </>
   );

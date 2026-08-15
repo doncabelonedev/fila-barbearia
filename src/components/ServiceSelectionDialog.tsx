@@ -1,11 +1,14 @@
 import { Check, Loader2, X } from "lucide-react";
 import { motion } from "motion/react";
-import { BARBER_SERVICES, ServiceId } from "../constants/constants";
+import { BarberService } from "../lib/supabase";
 
-export function calculatePersonDuration(services: ServiceId[]): number {
+export function calculatePersonDuration(
+  services: string[],
+  catalog: BarberService[],
+): number {
   return services.reduce((sum, id) => {
-    const svc = BARBER_SERVICES.find((s) => s.id === id);
-    return sum + (svc?.duration ?? 0);
+    const svc = catalog.find((s) => s.id === id);
+    return sum + (svc?.duration_minutes ?? 0);
   }, 0);
 }
 
@@ -13,9 +16,10 @@ interface ServiceSelectionDialogProps {
   personName: string;
   personIndex: number;
   totalPeople: number;
-  selectedServices: ServiceId[];
+  services: BarberService[];
+  selectedServices: string[];
   loading?: boolean;
-  onToggle: (id: ServiceId) => void;
+  onToggle: (id: string) => void;
   onDismiss: () => void;
   onBack: () => void;
   onNext: () => void;
@@ -25,6 +29,7 @@ export default function ServiceSelectionDialog({
   personName,
   personIndex,
   totalPeople,
+  services,
   selectedServices,
   loading = false,
   onToggle,
@@ -78,13 +83,13 @@ export default function ServiceSelectionDialog({
         </p>
 
         <div className="space-y-2 mb-4">
-          {BARBER_SERVICES.map((svc) => {
-            const selected = selectedServices.includes(svc.id as ServiceId);
+          {services.map((svc) => {
+            const selected = selectedServices.includes(svc.id);
             return (
               <button
                 key={svc.id}
                 type="button"
-                onClick={() => onToggle(svc.id as ServiceId)}
+                onClick={() => onToggle(svc.id)}
                 className={`flex w-full items-center justify-between rounded-xl border px-4 py-3 transition-all ${
                   selected
                     ? "border-emerald-500 bg-emerald-900/20 text-emerald-400"
@@ -111,7 +116,7 @@ export default function ServiceSelectionDialog({
                   </span>
                 </div>
                 <span className="text-sm text-neutral-400">
-                  {svc.duration} min
+                  {svc.duration_minutes} min
                 </span>
               </button>
             );
@@ -121,7 +126,7 @@ export default function ServiceSelectionDialog({
         <div className="mb-4 flex items-center justify-between rounded-xl bg-neutral-800 px-4 py-2">
           <span className="text-sm text-neutral-400">Tempo total</span>
           <span className="font-bold text-white">
-            {calculatePersonDuration(selectedServices)} min
+            {calculatePersonDuration(selectedServices, services)} min
           </span>
         </div>
 

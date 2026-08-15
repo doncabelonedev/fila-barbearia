@@ -56,3 +56,48 @@ ALTER TABLE public.shop_settings
 
 ALTER TABLE public.shop_settings
   ADD COLUMN IF NOT EXISTS is_pre_opening boolean not null default false;
+
+
+-- =====================================
+-- Migração 15/08/2026 — Catálogo de serviços configurável (barber_services)
+-- =====================================
+create table IF NOT EXISTS public.barber_services (
+  id text not null,
+  label text not null,
+  duration_minutes integer not null default 30,
+  display_order integer not null default 0,
+  is_active boolean not null default true,
+  created_at timestamp with time zone null default now(),
+  constraint barber_services_pkey primary key (id),
+  constraint barber_services_duration_check check (duration_minutes > 0)
+) TABLESPACE pg_default;
+
+ALTER TABLE public.barber_services ENABLE ROW LEVEL SECURITY;
+
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_policies
+    WHERE schemaname = 'public' AND tablename = 'barber_services' AND policyname = 'full_access_barber_services'
+  ) THEN
+    CREATE POLICY "full_access_barber_services" ON public.barber_services
+      FOR ALL TO anon USING (true) WITH CHECK (true);
+  END IF;
+END $$;
+
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_publication_tables
+    WHERE pubname = 'supabase_realtime' AND schemaname = 'public' AND tablename = 'barber_services'
+  ) THEN
+    ALTER PUBLICATION supabase_realtime ADD TABLE barber_services;
+  END IF;
+END $$;
+
+INSERT INTO public.barber_services (id, label, duration_minutes, display_order, is_active) VALUES
+  ('cabelo', 'Cabelo', 30, 0, true),
+  ('barba', 'Barba', 30, 1, true),
+  ('pezinho', 'Só o pezinho', 10, 2, true),
+  ('sobrancelha', 'Sobrancelha', 5, 3, true)
+ON CONFLICT (id) DO NOTHING;

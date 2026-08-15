@@ -109,7 +109,19 @@ create table IF NOT EXISTS public.campaigns (
   constraint campaigns_pkey primary key (id)
 ) TABLESPACE pg_default;
 
--- 8. Row Level Security (RLS) Policies
+-- 8. Barber Services Table (catálogo de serviços configurável)
+create table IF NOT EXISTS public.barber_services (
+  id text not null,
+  label text not null,
+  duration_minutes integer not null default 30,
+  display_order integer not null default 0,
+  is_active boolean not null default true,
+  created_at timestamp with time zone null default now(),
+  constraint barber_services_pkey primary key (id),
+  constraint barber_services_duration_check check (duration_minutes > 0)
+) TABLESPACE pg_default;
+
+-- 9. Row Level Security (RLS) Policies
 -- Pattern: RLS enabled + full_access policy ALL to anon (matches production)
 
 ALTER TABLE public.customers ENABLE ROW LEVEL SECURITY;
@@ -140,14 +152,27 @@ ALTER TABLE public.campaigns ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "full_access_campaigns" ON public.campaigns
   FOR ALL TO anon USING (true) WITH CHECK (true);
 
+ALTER TABLE public.barber_services ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "full_access_barber_services" ON public.barber_services
+  FOR ALL TO anon USING (true) WITH CHECK (true);
+
 -- Enable Realtime for Queue table
 ALTER PUBLICATION supabase_realtime ADD TABLE queue;
 ALTER PUBLICATION supabase_realtime ADD TABLE barbershop_schedule;
 ALTER PUBLICATION supabase_realtime ADD TABLE schedule_exceptions;
 ALTER PUBLICATION supabase_realtime ADD TABLE shop_settings;
+ALTER PUBLICATION supabase_realtime ADD TABLE barber_services;
 
 -- Initial Shop Settings Data
 INSERT INTO "public"."shop_settings" ("id", "manual_status", "updated_at", "whatsapp_number", "theme", "shop_name", "logo_url", "webhook_url", "tracking_url_base", "base_queue_time", "max_queue_time") VALUES ('8af2b68d-f970-41b2-b5ef-32b086db69bd', 'auto', '2026-03-29 20:21:17.552291+00', '+5521999062880', 'dark', 'Don Cabellone', 'https://mgvkygjydujtoqubgwmc.supabase.co/storage/v1/object/public/logos/logo-1776533077248.jpg', 'https://n8ndes.ltech.app.br/webhook/notificacao', 'https://www.doncabellone.com.br/', 30, '19:00');
 
 -- Initial Schedule Data
 INSERT INTO "public"."barbershop_schedule" ("id", "weekday", "open_time", "close_time", "is_closed") VALUES ('303420a2-bfa2-4be4-83d7-357a7496261f', 3, '09:00:00', '18:00:00', false), ('37f400ad-63a1-4535-ad06-b82ab141b83c', 5, '09:00:00', '18:00:00', false), ('3bec7d66-7b91-45b0-b26f-c3ccf281d4e1', 0, '17:04:00', '22:04:00', true), ('40cbf2d7-d3a7-4f77-9f10-a6bcca7b382d', 2, '09:00:00', '18:00:00', false), ('46d09e45-6176-454d-95fc-e5568a9eb851', 4, '09:00:00', '18:00:00', false), ('c6bb2f17-5df3-4ca3-9bf9-28e0c79383c6', 1, '09:00:00', '19:00:00', true), ('ec0f195f-3a9a-441f-892c-538814970443', 6, '08:00:00', '17:00:00', false);
+
+-- Initial Barber Services Data
+INSERT INTO public.barber_services (id, label, duration_minutes, display_order, is_active) VALUES
+  ('cabelo', 'Cabelo', 30, 0, true),
+  ('barba', 'Barba', 30, 1, true),
+  ('pezinho', 'Só o pezinho', 10, 2, true),
+  ('sobrancelha', 'Sobrancelha', 5, 3, true)
+ON CONFLICT (id) DO NOTHING;

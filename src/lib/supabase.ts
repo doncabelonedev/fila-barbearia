@@ -109,6 +109,15 @@ export type ScheduleException = {
   pre_opening_minutes: number;
 };
 
+export type BarberService = {
+  id: string;
+  label: string;
+  duration_minutes: number;
+  display_order: number;
+  is_active: boolean;
+  created_at: string;
+};
+
 export type ShopSettings = {
   id: string;
   manual_status: "auto" | "open" | "closed";

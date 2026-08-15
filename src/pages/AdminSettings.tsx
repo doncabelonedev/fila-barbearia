@@ -6,6 +6,7 @@ import {
   MessageCircle,
   Plus,
   Save,
+  Scissors,
   Store,
   Trash2,
   Upload,
@@ -15,13 +16,22 @@ import React, { useEffect, useState } from "react";
 import toast from "react-hot-toast";
 import { useNavigate } from "react-router-dom";
 import { WEEKDAYS } from "../constants/constants";
-import { Schedule, ScheduleException, supabase } from "../lib/supabase";
+import {
+  BarberService,
+  Schedule,
+  ScheduleException,
+  supabase,
+} from "../lib/supabase";
 import { webhookService } from "../services/webhookService";
 
 export default function AdminSettings() {
   const navigate = useNavigate();
   const [schedules, setSchedules] = useState<Schedule[]>([]);
   const [exceptions, setExceptions] = useState<ScheduleException[]>([]);
+  const [services, setServices] = useState<BarberService[]>([]);
+  const [addingService, setAddingService] = useState(false);
+  const [newServiceLabel, setNewServiceLabel] = useState("");
+  const [newServiceDuration, setNewServiceDuration] = useState(30);
   const [whatsappNumber, setWhatsappNumber] = useState("+5521999062880");
   const [shopName, setShopName] = useState("BarberQueue");
   const [logoUrl, setLogoUrl] = useState("");
@@ -55,6 +65,11 @@ export default function AdminSettings() {
         .from("schedule_exceptions")
         .select("*")
         .order("date", { ascending: true });
+      const { data: servicesData } = await supabase
+        .from("barber_services")
+        .select("*")
+        .order("display_order", { ascending: true })
+        .order("label", { ascending: true });
       const { data: settings } = await supabase
         .from("shop_settings")
         .select(
@@ -65,6 +80,7 @@ export default function AdminSettings() {
 
       setSchedules(schedData || []);
       setExceptions(exData || []);
+      setServices(servicesData || []);
       if (settings?.whatsapp_number) {
         setWhatsappNumber(settings.whatsapp_number);
       }
@@ -187,6 +203,143 @@ export default function AdminSettings() {
       setExceptions(exceptions.filter((ex) => ex.id !== id));
       toast.success("Exceção removida");
     }
+  };
+
+  const slugify = (text: string) => {
+    const base = text
+      .toLowerCase()
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "")
+      .replace(/[^a-z0-9]+/g, "-")
+      .replace(/(^-|-$)/g, "");
+    return base || "servico";
+  };
+
+  const generateUniqueServiceId = (label: string) => {
+    const base = slugify(label);
+    let candidate = base;
+    let n = 2;
+    while (services.some((s) => s.id === candidate)) {
+      candidate = `${base}-${n}`;
+      n++;
+    }
+    return candidate;
+  };
+
+  const handleAddService = async () => {
+    const label = newServiceLabel.trim();
+    if (!label) {
+      toast.error("Informe o nome do serviço");
+      return;
+    }
+    if (!newServiceDuration || newServiceDuration <= 0) {
+      toast.error("Duração deve ser maior que zero");
+      return;
+    }
+    const id = generateUniqueServiceId(label);
+    const displayOrder = services.length
+      ? Math.max(...services.map((s) => s.display_order)) + 1
+      : 0;
+    const { data, error } = await supabase
+      .from("barber_services")
+      .insert([
+        {
+          id,
+          label,
+          duration_minutes: newServiceDuration,
+          display_order: displayOrder,
+          is_active: true,
+        },
+      ])
+      .select()
+      .single();
+    if (error) {
+      toast.error(
+        error.code === "23505"
+          ? "Já existe um serviço com esse nome"
+          : "Falha ao adicionar serviço",
+      );
+      return;
+    }
+    setServices((prev) => [...prev, data]);
+    setNewServiceLabel("");
+    setNewServiceDuration(30);
+    setAddingService(false);
+    toast.success("Serviço adicionado");
+  };
+
+  const handleServiceFieldChange = (
+    id: string,
+    field: "label" | "duration_minutes",
+    value: string | number,
+  ) => {
+    setServices((prev) =>
+      prev.map((s) => (s.id === id ? { ...s, [field]: value } : s)),
+    );
+  };
+
+  const persistService = async (id: string) => {
+    const svc = services.find((s) => s.id === id);
+    if (!svc) return;
+    if (!svc.label.trim()) {
+      toast.error("Nome do serviço não pode ficar vazio");
+      return;
+    }
+    if (!svc.duration_minutes || svc.duration_minutes <= 0) {
+      toast.error("Duração deve ser maior que zero");
+      return;
+    }
+    const { error } = await supabase
+      .from("barber_services")
+      .update({
+        label: svc.label.trim(),
+        duration_minutes: svc.duration_minutes,
+      })
+      .eq("id", id);
+    if (error) {
+      toast.error("Falha ao salvar serviço");
+    }
+  };
+
+  const toggleServiceActive = async (id: string, current: boolean) => {
+    setServices((prev) =>
+      prev.map((s) => (s.id === id ? { ...s, is_active: !current } : s)),
+    );
+    const { error } = await supabase
+      .from("barber_services")
+      .update({ is_active: !current })
+      .eq("id", id);
+    if (error) {
+      toast.error("Falha ao atualizar serviço");
+      setServices((prev) =>
+        prev.map((s) => (s.id === id ? { ...s, is_active: current } : s)),
+      );
+    }
+  };
+
+  const handleDeleteService = async (id: string) => {
+    const { data: used } = await supabase
+      .from("queue")
+      .select("id")
+      .contains("selected_services", [id])
+      .limit(1)
+      .maybeSingle();
+    if (used) {
+      toast.error(
+        "Serviço usado em atendimentos existentes. Desative-o em vez de excluir.",
+      );
+      return;
+    }
+    const { error } = await supabase
+      .from("barber_services")
+      .delete()
+      .eq("id", id);
+    if (error) {
+      toast.error("Falha ao excluir serviço");
+      return;
+    }
+    setServices((prev) => prev.filter((s) => s.id !== id));
+    toast.success("Serviço removido");
   };
 
   const handleLogoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -470,6 +623,137 @@ export default function AdminSettings() {
                 URL exata enviada no webhook para o cliente acompanhar a fila.
               </p>
             </div>
+          </div>
+        </section>
+
+        <section className="space-y-4">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center space-x-2">
+              <Scissors className="h-6 w-6 text-emerald-600" />
+              <h2 className="text-xl font-bold text-white">Serviços</h2>
+            </div>
+            <button
+              onClick={() => setAddingService(true)}
+              className="flex items-center rounded-xl bg-white px-4 py-2 text-sm font-bold text-neutral-900 shadow-md hover:bg-neutral-200"
+            >
+              <Plus className="mr-2 h-4 w-4" />
+              Adicionar Serviço
+            </button>
+          </div>
+
+          <div className="grid gap-3">
+            {addingService && (
+              <div className="flex flex-wrap items-center gap-4 rounded-2xl bg-neutral-900 p-4 shadow-sm border border-emerald-700/60">
+                <input
+                  type="text"
+                  value={newServiceLabel}
+                  onChange={(e) => setNewServiceLabel(e.target.value)}
+                  placeholder="Nome do serviço"
+                  className="min-w-[160px] flex-1 rounded-lg border border-neutral-700 bg-neutral-800 px-3 py-2 text-sm text-white outline-none focus:border-emerald-500"
+                  autoFocus
+                />
+                <label className="flex items-center space-x-2">
+                  <span className="text-sm text-neutral-400 whitespace-nowrap">
+                    Duração (min)
+                  </span>
+                  <input
+                    type="number"
+                    min={1}
+                    value={newServiceDuration}
+                    onChange={(e) =>
+                      setNewServiceDuration(
+                        Math.max(1, Math.floor(Number(e.target.value) || 0)),
+                      )
+                    }
+                    className="w-20 rounded-lg border border-neutral-700 bg-neutral-800 px-2 py-1 text-sm text-white outline-none focus:border-emerald-500"
+                  />
+                </label>
+                <div className="flex gap-2">
+                  <button
+                    onClick={handleAddService}
+                    className="rounded-lg bg-emerald-600 px-3 py-2 text-sm font-bold text-white hover:bg-emerald-700"
+                  >
+                    Salvar
+                  </button>
+                  <button
+                    onClick={() => {
+                      setAddingService(false);
+                      setNewServiceLabel("");
+                      setNewServiceDuration(30);
+                    }}
+                    className="rounded-lg bg-neutral-800 px-3 py-2 text-sm font-medium text-neutral-400 hover:bg-neutral-700"
+                  >
+                    Cancelar
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {services.map((svc) => (
+              <div
+                key={svc.id}
+                className="flex flex-wrap items-center justify-between gap-4 rounded-2xl bg-neutral-900 p-4 shadow-sm border border-neutral-800"
+              >
+                <input
+                  type="text"
+                  value={svc.label}
+                  onChange={(e) =>
+                    handleServiceFieldChange(svc.id, "label", e.target.value)
+                  }
+                  onBlur={() => persistService(svc.id)}
+                  className="min-w-[140px] flex-1 rounded-lg border border-neutral-700 bg-neutral-800 px-3 py-2 text-sm font-bold text-white outline-none focus:border-emerald-500"
+                />
+
+                <div className="flex items-center space-x-4">
+                  <label className="flex items-center space-x-2">
+                    <span className="text-sm text-neutral-400 whitespace-nowrap">
+                      Duração (min)
+                    </span>
+                    <input
+                      type="number"
+                      min={1}
+                      value={svc.duration_minutes}
+                      onChange={(e) =>
+                        handleServiceFieldChange(
+                          svc.id,
+                          "duration_minutes",
+                          Math.max(1, Math.floor(Number(e.target.value) || 0)),
+                        )
+                      }
+                      onBlur={() => persistService(svc.id)}
+                      className="w-20 rounded-lg border border-neutral-700 bg-neutral-800 px-2 py-1 text-sm text-white outline-none focus:border-emerald-500"
+                    />
+                  </label>
+
+                  <label className="flex items-center space-x-2 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={svc.is_active}
+                      onChange={() =>
+                        toggleServiceActive(svc.id, svc.is_active)
+                      }
+                      className="h-5 w-5 rounded border-neutral-700 text-emerald-600 focus:ring-emerald-500 bg-neutral-800"
+                    />
+                    <span className="text-sm font-medium text-neutral-400">
+                      Ativo
+                    </span>
+                  </label>
+
+                  <button
+                    onClick={() => handleDeleteService(svc.id)}
+                    className="rounded-lg p-2 text-red-500 hover:bg-red-900/20 transition-colors"
+                  >
+                    <Trash2 className="h-5 w-5" />
+                  </button>
+                </div>
+              </div>
+            ))}
+
+            {services.length === 0 && !addingService && (
+              <div className="rounded-2xl border-2 border-dashed border-neutral-800 p-8 text-center text-neutral-600">
+                Nenhum serviço cadastrado.
+              </div>
+            )}
           </div>
         </section>
 

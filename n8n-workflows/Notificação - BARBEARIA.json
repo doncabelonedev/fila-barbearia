@@ -314,12 +314,6 @@
               "name": "evento",
               "value": "={{ $json.body.event }}",
               "type": "string"
-            },
-            {
-              "id": "712c7877-f037-4cc7-be40-63b1e2341757",
-              "name": "estimatedWait",
-              "value": "={{ $json.body.queue.estimatedWait }}",
-              "type": "string"
             }
           ]
         },
@@ -899,7 +893,13 @@
     },
     "edit_next": {
       "main": [
-        []
+        [
+          {
+            "node": "Split Out",
+            "type": "main",
+            "index": 0
+          }
+        ]
       ]
     },
     "Split Out": {

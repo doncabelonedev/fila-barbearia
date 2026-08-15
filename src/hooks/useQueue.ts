@@ -6,6 +6,8 @@ export function useShopStatus() {
   const [isOpen, setIsOpen] = useState<boolean | null>(null);
   const [message, setMessage] = useState<string>("");
   const [closeTime, setCloseTime] = useState<string | null>(null);
+  const [openTime, setOpenTime] = useState<string | null>(null);
+  const [preOpeningMinutes, setPreOpeningMinutes] = useState<number | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -34,6 +36,8 @@ export function useShopStatus() {
             );
           }
           setCloseTime(null);
+          setOpenTime(null);
+          setPreOpeningMinutes(null);
           setLoading(false);
           return;
         }
@@ -49,6 +53,8 @@ export function useShopStatus() {
           if (exception.is_closed) {
             setIsOpen(false);
             setCloseTime(null);
+            setOpenTime(null);
+            setPreOpeningMinutes(null);
             setMessage(
               "A barbearia está fechada hoje devido a um feriado ou evento especial.",
             );
@@ -56,6 +62,8 @@ export function useShopStatus() {
             const open = exception.open_time;
             const close = exception.close_time;
             setCloseTime(close);
+            setOpenTime(open);
+            setPreOpeningMinutes(exception.pre_opening_minutes ?? null);
             if (currentTime >= open && currentTime <= close) {
               setIsOpen(true);
             } else {
@@ -77,11 +85,15 @@ export function useShopStatus() {
             if (schedule.is_closed) {
               setIsOpen(false);
               setCloseTime(null);
+              setOpenTime(null);
+              setPreOpeningMinutes(null);
               setMessage("A barbearia está fechada hoje.");
             } else if (schedule.open_time && schedule.close_time) {
               const open = schedule.open_time;
               const close = schedule.close_time;
               setCloseTime(close);
+              setOpenTime(open);
+              setPreOpeningMinutes(schedule.pre_opening_minutes ?? null);
               if (currentTime >= open && currentTime <= close) {
                 setIsOpen(true);
               } else {
@@ -94,11 +106,15 @@ export function useShopStatus() {
               // Schedule exists but no times set
               setIsOpen(true);
               setCloseTime(null);
+              setOpenTime(null);
+              setPreOpeningMinutes(null);
             }
           } else {
             // No schedule found for today, default to open so app is usable
             setIsOpen(true);
             setCloseTime(null);
+            setOpenTime(null);
+            setPreOpeningMinutes(null);
             if (schedError) {
               console.warn(
                 "Schedule table might not be initialized:",
@@ -130,7 +146,7 @@ export function useShopStatus() {
     };
   }, []);
 
-  return { isOpen, message, closeTime, loading };
+  return { isOpen, message, closeTime, openTime, preOpeningMinutes, loading };
 }
 
 export function timeToMinutes(time: string): number {

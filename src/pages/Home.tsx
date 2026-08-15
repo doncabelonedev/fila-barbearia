@@ -73,7 +73,14 @@ export default function Home() {
   const [loading, setLoading] = useState(false);
   const [dialogStep, setDialogStep] = useState<number | null>(null);
   const [servicesPerPerson, setServicesPerPerson] = useState<ServiceId[][]>([]);
-  const { isOpen, message, closeTime, loading: statusLoading } = useShopStatus();
+  const {
+    isOpen,
+    message,
+    closeTime,
+    openTime,
+    preOpeningMinutes,
+    loading: statusLoading,
+  } = useShopStatus();
   const queueCount = useQueueCount();
   const navigate = useNavigate();
   const {
@@ -332,6 +339,29 @@ export default function Home() {
     return estimatedMinutes >= closeMinutes;
   })();
 
+  const preQueueInfo = (() => {
+    if (!openTime || !preOpeningMinutes) return null;
+    const nowMinutes = new Date().getHours() * 60 + new Date().getMinutes();
+    const preQueueMinutes = timeToMinutes(openTime) - preOpeningMinutes;
+    const diffMinutes = preQueueMinutes - nowMinutes;
+    if (diffMinutes <= 0) return null;
+
+    const h = Math.floor(preQueueMinutes / 60) % 24;
+    const m = preQueueMinutes % 60;
+    const timeStr = `${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")}`;
+
+    const diffH = Math.floor(diffMinutes / 60);
+    const diffM = diffMinutes % 60;
+    const durationStr =
+      diffH > 0 && diffM > 0
+        ? `${diffH}h${diffM}min`
+        : diffH > 0
+          ? `${diffH}h`
+          : `${diffM}min`;
+
+    return { timeStr, durationStr };
+  })();
+
   if (statusLoading) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-neutral-950">
@@ -378,6 +408,16 @@ export default function Home() {
           <div className="rounded-2xl bg-amber-900/20 p-6 text-amber-400 shadow-sm border border-amber-900/30">
             <p className="font-medium">A barbearia está fechada no momento.</p>
             <p className="mt-1 text-sm opacity-90">{message}</p>
+            {preQueueInfo && (
+              <div className="mt-4 flex items-center justify-center gap-2 rounded-xl border border-amber-900/40 bg-amber-900/30 px-4 py-2.5 text-sm">
+                <Clock className="h-4 w-4 shrink-0" />
+                <span>
+                  Pré-fila disponível em{" "}
+                  <span className="font-semibold">{preQueueInfo.durationStr}</span>{" "}
+                  <span className="opacity-75">(às {preQueueInfo.timeStr})</span>
+                </span>
+              </div>
+            )}
           </div>
         ) : isQueueFull ? (
           <div className="rounded-2xl bg-amber-900/20 p-6 text-amber-400 shadow-sm border border-amber-900/30">

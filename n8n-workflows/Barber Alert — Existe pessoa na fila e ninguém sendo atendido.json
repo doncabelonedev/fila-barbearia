@@ -1,5 +1,5 @@
 {
-  "name": "Barber Alert — No Service (5min cron)",
+  "name": "Barber Alert — Existe pessoa na fila e ninguém sendo atendido",
   "nodes": [
     {
       "parameters": {
@@ -15,7 +15,10 @@
       "name": "Schedule 5min",
       "type": "n8n-nodes-base.scheduleTrigger",
       "typeVersion": 1.2,
-      "position": [-688, 384]
+      "position": [
+        -688,
+        384
+      ]
     },
     {
       "parameters": {
@@ -27,11 +30,14 @@
       "name": "Query Shop + Queue",
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 2.5,
-      "position": [-464, 384],
+      "position": [
+        -464,
+        384
+      ],
       "credentials": {
         "postgres": {
-          "id": "uMvoklfk8laQ7yLw",
-          "name": "doncabelone des - olaszlucas"
+          "id": "uEJcXBMdzMROjoRJ",
+          "name": "filabarbearia - conta wagner producao"
         }
       }
     },
@@ -109,7 +115,10 @@
       "name": "Should Alert?",
       "type": "n8n-nodes-base.if",
       "typeVersion": 2.2,
-      "position": [-240, 384]
+      "position": [
+        -240,
+        384
+      ]
     },
     {
       "parameters": {
@@ -129,7 +138,10 @@
       "name": "Build WAHA Payload",
       "type": "n8n-nodes-base.set",
       "typeVersion": 3.4,
-      "position": [-16, 384]
+      "position": [
+        -16,
+        384
+      ]
     },
     {
       "parameters": {
@@ -143,7 +155,10 @@
       },
       "type": "@devlikeapro/n8n-nodes-waha.WAHA",
       "typeVersion": 202502,
-      "position": [208, 384],
+      "position": [
+        208,
+        384
+      ],
       "id": "f8df10fb-bd57-4b83-93dd-83dfc23b352f",
       "name": "Send a text message",
       "credentials": {
@@ -152,6 +167,19 @@
           "name": "WAHA - doncabellone"
         }
       }
+    },
+    {
+      "parameters": {
+        "content": "#Numero fixo do grupo do wagner de barbearia para envio de notificacoes\n"
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        0,
+        32
+      ],
+      "typeVersion": 1,
+      "id": "4afe731e-9e5c-4639-8b84-c72a21c8c808",
+      "name": "Sticky Note"
     }
   ],
   "pinData": {},
@@ -206,7 +234,7 @@
     "executionOrder": "v1",
     "binaryMode": "separate"
   },
-  "versionId": "0c8993b6-7675-43e4-af48-ae4a5362f33d",
+  "versionId": "37857454-08e3-4cbb-b3fe-4df7577f70ed",
   "meta": {
     "templateCredsSetupCompleted": true,
     "instanceId": "d4e37845a647a12b6a7a035bf7160e477fe76eaff3797bfeee3c57876702d64d"

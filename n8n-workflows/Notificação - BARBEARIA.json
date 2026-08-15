@@ -1,0 +1,1346 @@
+{
+  "name": "Notificação - BARBEARIA",
+  "nodes": [
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "93131cd7-989d-4673-ba8a-7fe01ead9d99",
+              "leftValue": "={{ $json.numberExists }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        1616,
+        1056
+      ],
+      "id": "327a5eb9-5c59-4d82-8173-da51a26b116d",
+      "name": "If"
+    },
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "notificacao",
+        "options": {
+          "allowedOrigins": "*"
+        }
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        -1536,
+        960
+      ],
+      "id": "266efce3-c6da-42d8-9884-4dfde6abb6bb",
+      "name": "Webhook",
+      "webhookId": "ca062df5-3fa1-47d7-95dc-c574eb858cea"
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "id": "07dfccc0-7eac-4414-8ad2-a140844da3b3",
+                    "leftValue": "={{ $json.evento }}",
+                    "rightValue": "JOINED_IN_PRE_OPENING",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals",
+                      "name": "filter.operator.equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "JOINED_IN_PRE_OPENING"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "id": "e166d43f-cc25-4316-b724-714334eb26a7",
+                    "leftValue": "={{ $json.evento }}",
+                    "rightValue": "JOINED_IN_LUNCH",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals",
+                      "name": "filter.operator.equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "JOINED_IN_LUNCH"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.evento }}",
+                    "rightValue": "JOINED",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    },
+                    "id": "808ac601-b50d-40d3-ac64-a9a48139910e"
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "JOINED"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "id": "cd6e4f63-9b20-42b2-8185-06143e62fb7a",
+                    "leftValue": "={{ $json.evento }}",
+                    "rightValue": "NEAR",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals",
+                      "name": "filter.operator.equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "NEAR"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "id": "393c0fbf-694c-4a15-8d4e-bac4db4ef5d3",
+                    "leftValue": "={{ $json.evento }}",
+                    "rightValue": "NEXT",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals",
+                      "name": "filter.operator.equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "NEXT"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "id": "472fcc6d-61ca-4f65-930f-b6094114580d",
+                    "leftValue": "={{ $json.evento }}",
+                    "rightValue": "UPDATE",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals",
+                      "name": "filter.operator.equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "UPDATE"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "id": "a8ba85a0-352b-475c-badc-849e88f20380",
+                    "leftValue": "={{ $json.evento }}",
+                    "rightValue": "DELAYED",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "DELAYED"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "id": "a0c52c1e-36ce-414d-b05c-e5fed7dea0f5",
+                    "leftValue": "={{ $json.evento }}",
+                    "rightValue": "LUNCH_START",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals",
+                      "name": "filter.operator.equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "LUNCH_START"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "id": "cfbded86-63b3-4dbc-ba46-6093c4998f5d",
+                    "leftValue": "={{ $json.evento }}",
+                    "rightValue": "LUNCH_END",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals",
+                      "name": "filter.operator.equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "LUNCH_END"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "id": "950d78fd-da56-4e1f-8249-31b533322f66",
+                    "leftValue": "={{ $json.evento }}",
+                    "rightValue": "PRE_OPENING_END",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals",
+                      "name": "filter.operator.equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "PRE_OPENING_END"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "id": "01dd64a6-10b7-4d9d-99b7-0ad95e7c76ee",
+                    "leftValue": "={{ $json.evento }}",
+                    "rightValue": "BARBER_ALERT_NO_SERVICE",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals",
+                      "name": "filter.operator.equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "BARBER_ALERT_NO_SERVICE"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "id": "7ed4cf29-4cd0-4130-82e0-04e6091470fb",
+                    "leftValue": "={{ $json.evento }}",
+                    "rightValue": "BARBER_ALERT_OVERTIME",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals",
+                      "name": "filter.operator.equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "BARBER_ALERT_OVERTIME"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.4,
+      "position": [
+        -1088,
+        848
+      ],
+      "id": "2af1537a-b242-4dff-9442-2d15264b3a8b",
+      "name": "Switch"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "1b95aa07-85e4-4db7-a32e-1fa954555e01",
+              "name": "nome_usuario",
+              "value": "={{ $json.body.user.name }}",
+              "type": "string"
+            },
+            {
+              "id": "a14f5119-d9ee-4481-92b9-cc6c5d600bb0",
+              "name": "telefone_usuario",
+              "value": "={{ $json.body.user.phone }}",
+              "type": "string"
+            },
+            {
+              "id": "e0315c0f-9e91-4631-a82d-b8346ba04495",
+              "name": "posicao_fila",
+              "value": "={{ $json.body.queue.position }}",
+              "type": "number"
+            },
+            {
+              "id": "14dfc4ae-14a5-43b9-ae56-eb720cec35a5",
+              "name": "pessoas_afrente",
+              "value": "={{ $json.body.queue.peopleAhead }}",
+              "type": "number"
+            },
+            {
+              "id": "8fc4dd01-0bc7-4812-bbc3-941eccafc5b7",
+              "name": "estimatedWait",
+              "value": "={{ $json.body.queue.estimatedWait }}",
+              "type": "string"
+            },
+            {
+              "id": "aa819064-1a44-4334-8754-30c6b71edb56",
+              "name": "url_acompanhamento",
+              "value": "={{ $json.body.trackingUrl }}",
+              "type": "string"
+            },
+            {
+              "id": "8c25f87a-e0c9-4a44-b7fe-c7f9cdddd079",
+              "name": "evento",
+              "value": "={{ $json.body.event }}",
+              "type": "string"
+            },
+            {
+              "id": "712c7877-f037-4cc7-be40-63b1e2341757",
+              "name": "estimatedWait",
+              "value": "={{ $json.body.queue.estimatedWait }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -1312,
+        960
+      ],
+      "id": "eedc33f1-b68a-4c0d-9b6d-f0670c8032c1",
+      "name": "Edit Fields1"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "7299ded4-4775-41bf-86cc-63664e335f11",
+              "name": "mensagem",
+              "value": "=Você entrou na fila com sucesso ✅\n\n{{ $('Edit Fields1').item.json.nome_usuario }},\n{{ $json.pessoas_afrente > 0 ? `👥 Há ${$json.pessoas_afrente} pessoa(s) na sua frente` : '' }}\n⏳ Tempo estimado atendimento: {{ $('Edit Fields1').item.json.estimatedWait }}\n\n⚠️ *O horário exibido é apenas uma PREVISÃO, podendo sofrer variações para MAIS ou para MENOS.*\n\n🔗 Acompanhe em tempo real para não perder sua vez:\n{{ $json.url_acompanhamento }}\n\n📸 Siga-nos no Instagram: https://www.instagram.com/doncabellone?igsh=MWMzNmxwOHFhNmRyYg==",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        224,
+        480
+      ],
+      "id": "3317d353-f092-4103-93fb-b5e792eb6af9",
+      "name": "edit_joined"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "7299ded4-4775-41bf-86cc-63664e335f11",
+              "name": "mensagem",
+              "value": "={{ $('Edit Fields1').item.json.estimatedWait.toLowerCase().trim() === 'agora' ? '✅ Sua vez chegou!' : '⚠️ Sua vez está se aproximando!' }}\n\n{{ $('Edit Fields1').item.json.nome_usuario }},\n\n{{ $('Edit Fields1').item.json.estimatedWait.toLowerCase().trim() === 'agora' ? '🛎️ Venha imediatamente!' : $json.pessoas_afrente > 0 ? `👥 ${$json.pessoas_afrente} pessoa(s) na sua frente` : '🎯 Você é o próximo da fila!' }}\n\n{{ $('Edit Fields1').item.json.estimatedWait.toLowerCase().trim() === 'agora' ? '' : `⏳ Tempo estimado atendimento: ${$('Edit Fields1').item.json.estimatedWait}` }}\n\n{{ $('Edit Fields1').item.json.estimatedWait.toLowerCase().trim() === 'agora' ? '' : '⚠️ *O horário exibido é apenas uma PREVISÃO, podendo sofrer variações para MAIS ou para MENOS.*' }}\n\n{{ $('Edit Fields1').item.json.estimatedWait.toLowerCase().trim() === 'agora' ? '' : '👉 Para não perder sua vez, já venha para a barbearia' }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        224,
+        1056
+      ],
+      "id": "0a415162-02a8-44e3-a5c1-269632670b60",
+      "name": "edit_near"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "7299ded4-4775-41bf-86cc-63664e335f11",
+              "name": "mensagem",
+              "value": "=🔔 Sua vez chegou!\n\n{{ $('Edit Fields1').item.json.nome_usuario }}, venha imediatamente para o atendimento\n\n⏳ Para não perder sua vez, chegue o quanto antes — podemos chamar o próximo cliente e você irá para o final da fila. ",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        224,
+        1248
+      ],
+      "id": "02933838-4b16-4fdd-884e-774d6b26a05d",
+      "name": "edit_next"
+    },
+    {
+      "parameters": {
+        "fieldToSplitOut": "mensagem",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.splitOut",
+      "typeVersion": 1,
+      "position": [
+        1104,
+        1056
+      ],
+      "id": "5d29c642-4a84-4ec3-ac9a-9278a6460e0a",
+      "name": "Split Out"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "0748431f-cbba-490f-90c9-fcf38de6ae45",
+              "leftValue": "={{ $json.pessoas_afrente }}",
+              "rightValue": 0,
+              "operator": {
+                "type": "number",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        0,
+        384
+      ],
+      "id": "b1dbce1a-4120-4b85-bf05-4655a14a28d3",
+      "name": "pessoas_afrente=0?"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "7299ded4-4775-41bf-86cc-63664e335f11",
+              "name": "mensagem",
+              "value": "=Você entrou na fila com sucesso ✅\n\n{{ $('Edit Fields1').item.json.nome_usuario }},\n👉 Acompanhe sua posição aqui para não perder sua vez:\n🔗 {{ $json.url_acompanhamento }}\n\n⏳ Fique atento, pois você já é o próximo. Encaminhe-se a barbearia para ser atendido.\n\n📸 Siga-nos no Instagram: https://www.instagram.com/doncabellone?igsh=MWMzNmxwOHFhNmRyYg==",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        224,
+        288
+      ],
+      "id": "85da2d50-ca20-4efa-9178-3605dfc89297",
+      "name": "edit_joined_fila_vazia"
+    },
+    {
+      "parameters": {
+        "amount": "={{ Math.floor(Math.random() * 3) + 3 }}"
+      },
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [
+        2208,
+        1056
+      ],
+      "id": "e1b4fb29-179c-4019-9b36-5f77cde62bd9",
+      "name": "Wait",
+      "webhookId": "1873977b-d084-48d2-a0a2-36960d2628da",
+      "notes": "tempo aleatório entre 3 e 5 segundos"
+    },
+    {
+      "parameters": {
+        "chatId": "=81996552",
+        "text": "=body.type: {{ $('Webhook').item.json.body.type }}\nbody.event: {{ $('Webhook').item.json.body.event }}\nbody.user.name: {{ $('Webhook').item.json.body.user.name }}\nbody.user.phone: {{ $('Webhook').item.json.body.user.phone }}\nbody.queue.position: {{ $('Webhook').item.json.body.queue.position }}\nbody.queue.peopleahead: {{ $('Webhook').item.json.body.queue.peopleAhead }}\nbody.queue.etaMinutes: {{ $('Webhook').item.json.body.queue.etaMinutes }}\nbody.queue.estimatedWait: {{ $('Webhook').item.json.body.queue.estimatedWait }}",
+        "additionalFields": {
+          "appendAttribution": false,
+          "parse_mode": "HTML"
+        }
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        0,
+        0
+      ],
+      "id": "834a1391-954b-4dab-92d0-6896f0518cd5",
+      "name": "Telegram",
+      "webhookId": "750d64a0-1441-449b-a4a9-cee01c2e930f",
+      "disabled": true
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "7299ded4-4775-41bf-86cc-63664e335f11",
+              "name": "mensagem",
+              "value": "=⚠️ Houve um atraso no atendimento!\n\n{{ $('Edit Fields1').item.json.nome_usuario }},\n{{ $json.pessoas_afrente > 0 ? `👥 Há ${$json.pessoas_afrente} pessoa(s) na sua frente` : '' }}\n⏳ NOVO Tempo estimado atendimento: {{ $('Edit Fields1').item.json.estimatedWait }}\n\n⚠️ *O horário exibido é apenas uma PREVISÃO, podendo sofrer variações para MAIS ou para MENOS.*\n\n👉 Para não perder sua vez, já venha para a barbearia",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        224,
+        1440
+      ],
+      "id": "6e444493-0e06-4b5a-86ac-e80edac09714",
+      "name": "edit_delayed"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "7299ded4-4775-41bf-86cc-63664e335f11",
+              "name": "mensagem",
+              "value": "=⚠️ Estamos em pausa para o almoço! 🍽️\n\nFique tranquilo, sua posição na fila está garantida!\nSeu novo horário será enviado assim que retornarmos.",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        224,
+        1632
+      ],
+      "id": "e5587932-e7fb-46b7-832a-d544f7117747",
+      "name": "edit_lunch_start"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "7299ded4-4775-41bf-86cc-63664e335f11",
+              "name": "mensagem",
+              "value": "=✅ Estamos de volta!\n\n{{ $('Edit Fields1').item.json.nome_usuario }},\n{{ $json.pessoas_afrente > 0 ? `👥 Há ${$json.pessoas_afrente} pessoa(s) na sua frente` : '' }}\n⏳ Seu horário estimado atualizado: {{ $('Edit Fields1').item.json.estimatedWait }}\n\n⚠️ *O horário exibido é apenas uma PREVISÃO, podendo sofrer variações para MAIS ou para MENOS.*\n\n👉 Para não perder sua vez, já venha para a barbearia",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        224,
+        1824
+      ],
+      "id": "26c14d18-ed21-4eb3-96d7-9185fdc6a538",
+      "name": "edit_lunch_end"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "7299ded4-4775-41bf-86cc-63664e335f11",
+              "name": "mensagem",
+              "value": "=Você entrou na fila em horario de almoço!✅\n\nSeu horário de atendimento será enviado assim que retornarmos.\n\n{{ $('Edit Fields1').item.json.nome_usuario }},\n👉 Acompanhe sua posição aqui para não perder sua vez:\n🔗 {{ $json.url_acompanhamento }}\n\n\n📸 Siga-nos no Instagram: https://www.instagram.com/doncabellone?igsh=MWMzNmxwOHFhNmRyYg==",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        224,
+        864
+      ],
+      "id": "454c1399-697f-432b-9d57-10ea28b95724",
+      "name": "edit_joined_lunch"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "7299ded4-4775-41bf-86cc-63664e335f11",
+              "name": "mensagem",
+              "value": "=Você entrou na fila em horario de pré abertura!✅\n\nSeu horário de atendimento será enviado assim o barbeiro chegar na barbearia.\n\n{{ $('Edit Fields1').item.json.nome_usuario }},\n👉 Acompanhe sua posição aqui para não perder sua vez:\n🔗 {{ $json.url_acompanhamento }}\n\n\n📸 Siga-nos no Instagram: https://www.instagram.com/doncabellone?igsh=MWMzNmxwOHFhNmRyYg==",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        224,
+        672
+      ],
+      "id": "899ee6fd-87de-4609-9dae-6fc3b12870f6",
+      "name": "edit_joined_pre_open"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "7299ded4-4775-41bf-86cc-63664e335f11",
+              "name": "mensagem",
+              "value": "=✅ Estamos abertos!\n\n{{ $('Edit Fields1').item.json.nome_usuario }},\n👥 Há {{ $json.pessoas_afrente }} pessoa(s) na sua frente\n⏳ Seu horário estimado atualizado: {{ $('Edit Fields1').item.json.estimatedWait }}\n\n⚠️ *O horário exibido é apenas uma PREVISÃO, podendo sofrer variações para MAIS ou para MENOS.*\n\n👉 Para não perder sua vez, já venha para a barbearia",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        208,
+        2032
+      ],
+      "id": "068bb6f9-489c-4010-b38b-68b1472e9ca4",
+      "name": "edit_lunch_pre_opened_end"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "7299ded4-4775-41bf-86cc-63664e335f11",
+              "name": "mensagem",
+              "value": "=⚠️  *Fila aguardando!*\n\nHá clientes esperando e nenhum atendimento foi iniciado.\n  \n👤 Próximo: {{ $('Edit Fields1').item.json.nome_usuario }}\n",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        208,
+        2240
+      ],
+      "id": "cb2c04cb-8a46-43c9-98e7-ff8c9ad7c8a5",
+      "name": "edit_lunch_alert_no_service"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "7299ded4-4775-41bf-86cc-63664e335f11",
+              "name": "mensagem",
+              "value": "=⏰ *Tempo de corte ultrapassado!*\n\nO atendimento atual já passou do tempo estimado.\n\n👤 Cliente: {{ $('Edit Fields1').item.json.nome_usuario }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        208,
+        2480
+      ],
+      "id": "f34e94c1-759e-401c-86ea-11d958ba5768",
+      "name": "edit_lunch_alert_overtime"
+    },
+    {
+      "parameters": {
+        "chatId": "=81996552",
+        "text": "atrasado",
+        "additionalFields": {
+          "appendAttribution": false,
+          "parse_mode": "HTML"
+        }
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        496,
+        2752
+      ],
+      "id": "3d6b3a5d-a620-4d24-a86a-84899096cd9c",
+      "name": "Telegram1",
+      "webhookId": "750d64a0-1441-449b-a4a9-cee01c2e930f",
+      "disabled": true
+    },
+    {
+      "parameters": {
+        "resource": "Chatting",
+        "operation": "Send Text",
+        "session": "=default",
+        "chatId": "=120363407983624448@g.us",
+        "text": "=📥 Novo cliente na fila\n\n👤 Nome: {{ $('Edit Fields1').item.json.nome_usuario }}\n📍 Telefone: https://wa.me/{{ $json.telefone_usuario }}\n⏱️ Entrada: {{ $now.format('dd/MM/yyyy - HH:mm') }}h",
+        "linkPreview": false,
+        "requestOptions": {}
+      },
+      "type": "@devlikeapro/n8n-nodes-waha.WAHA",
+      "typeVersion": 202502,
+      "position": [
+        -32,
+        192
+      ],
+      "id": "631ad24c-b731-4120-8ba5-bd78b29fbf35",
+      "name": "Send a text message",
+      "credentials": {
+        "wahaApi": {
+          "id": "SnPbBDMOKqjxdZQo",
+          "name": "WAHA - doncabellone"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "resource": "Contacts",
+        "operation": "Check Exists",
+        "session": "=default",
+        "phone": "={{ $('Edit Fields1').item.json.telefone_usuario }}",
+        "requestOptions": {}
+      },
+      "type": "@devlikeapro/n8n-nodes-waha.WAHA",
+      "typeVersion": 202502,
+      "position": [
+        1312,
+        1056
+      ],
+      "id": "5fba1647-5e1a-42c3-950f-c8c1e76f5ace",
+      "name": "Check phone number is registered in WhatsApp.1",
+      "credentials": {
+        "wahaApi": {
+          "id": "SnPbBDMOKqjxdZQo",
+          "name": "WAHA - doncabellone"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "resource": "Chatting",
+        "operation": "Start Typing",
+        "session": "=default",
+        "chatId": "={{ $('Check phone number is registered in WhatsApp.1').item.json.chatId }}",
+        "requestOptions": {}
+      },
+      "type": "@devlikeapro/n8n-nodes-waha.WAHA",
+      "typeVersion": 202502,
+      "position": [
+        1952,
+        1056
+      ],
+      "id": "9d557bb6-b988-4d11-b743-e15d0022e6ee",
+      "name": "Start Typing1",
+      "credentials": {
+        "wahaApi": {
+          "id": "SnPbBDMOKqjxdZQo",
+          "name": "WAHA - doncabellone"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "resource": "Chatting",
+        "operation": "Send Text",
+        "session": "=default",
+        "chatId": "=120363427622801943@g.us",
+        "text": "={{ $json.mensagem }}",
+        "linkPreview": false,
+        "requestOptions": {}
+      },
+      "type": "@devlikeapro/n8n-nodes-waha.WAHA",
+      "typeVersion": 202502,
+      "position": [
+        704,
+        2336
+      ],
+      "id": "9f77340c-61c9-44ca-8734-5c26fbc1af24",
+      "name": "Send a text message1",
+      "credentials": {
+        "wahaApi": {
+          "id": "SnPbBDMOKqjxdZQo",
+          "name": "WAHA - doncabellone"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "resource": "Chatting",
+        "operation": "Send Text",
+        "session": "=default",
+        "chatId": "={{ $('Check phone number is registered in WhatsApp.1').item.json.chatId }}",
+        "text": "={{ $('Split Out').item.json.mensagem }}",
+        "linkPreview": false,
+        "requestOptions": {}
+      },
+      "type": "@devlikeapro/n8n-nodes-waha.WAHA",
+      "typeVersion": 202502,
+      "position": [
+        2416,
+        1056
+      ],
+      "id": "fb9a8d58-79e6-439b-9ea9-ad22484137ae",
+      "name": "Send a text message2",
+      "credentials": {
+        "wahaApi": {
+          "id": "SnPbBDMOKqjxdZQo",
+          "name": "WAHA - doncabellone"
+        }
+      }
+    }
+  ],
+  "pinData": {
+    "Webhook": [
+      {
+        "json": {
+          "headers": {
+            "host": "n8n.doncabellone.com.br",
+            "user-agent": "Mozilla/5.0 (iPhone; CPU iPhone OS 26_5_2 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) CriOS/150.0.7871.113 Mobile/15E148 Safari/604.1",
+            "content-length": "264",
+            "accept": "application/json",
+            "accept-encoding": "gzip, deflate, br, zstd",
+            "accept-language": "pt-BR,pt;q=0.9",
+            "content-type": "application/json",
+            "origin": "https://www.doncabellone.com.br",
+            "priority": "u=3, i",
+            "referer": "https://www.doncabellone.com.br/",
+            "sec-fetch-dest": "empty",
+            "sec-fetch-mode": "cors",
+            "sec-fetch-site": "same-site",
+            "x-forwarded-for": "10.0.0.2",
+            "x-forwarded-host": "n8n.doncabellone.com.br",
+            "x-forwarded-port": "443",
+            "x-forwarded-proto": "https",
+            "x-forwarded-server": "a5979d1f73b1",
+            "x-real-ip": "10.0.0.2"
+          },
+          "params": {},
+          "query": {},
+          "body": {
+            "type": "QUEUE_UPDATE",
+            "event": "JOINED",
+            "user": {
+              "name": "Lucas Andrade",
+              "phone": "5521969612536"
+            },
+            "queue": {
+              "position": 2,
+              "peopleAhead": 1,
+              "etaMinutes": 8,
+              "estimatedWait": "09:00"
+            },
+            "establishment": {
+              "name": "Don Cabellone"
+            },
+            "trackingUrl": "https://www.doncabellone.com.br/"
+          },
+          "webhookUrl": "https://n8n.doncabellone.com.br/webhook/notificacao",
+          "executionMode": "production"
+        }
+      }
+    ],
+    "Edit Fields1": [
+      {
+        "json": {
+          "nome_usuario": "Victor Freitas",
+          "telefone_usuario": "5521996412433",
+          "posicao_fila": 1,
+          "pessoas_afrente": 0,
+          "estimatedWait": "Agora",
+          "url_acompanhamento": "https://www.doncabellone.com.br/",
+          "evento": "UPDATE"
+        }
+      }
+    ]
+  },
+  "connections": {
+    "If": {
+      "main": [
+        [
+          {
+            "node": "Start Typing1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "Edit Fields1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Switch": {
+      "main": [
+        [
+          {
+            "node": "edit_joined_pre_open",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Send a text message",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "edit_joined_lunch",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Send a text message",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "pessoas_afrente=0?",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Telegram",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Send a text message",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "edit_near",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "edit_next",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "edit_near",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "edit_delayed",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "edit_lunch_start",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "edit_lunch_end",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "edit_lunch_pre_opened_end",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "edit_lunch_alert_no_service",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "edit_lunch_alert_overtime",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Edit Fields1": {
+      "main": [
+        [
+          {
+            "node": "Switch",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "edit_joined": {
+      "main": [
+        [
+          {
+            "node": "Split Out",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "edit_near": {
+      "main": [
+        [
+          {
+            "node": "Split Out",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "edit_next": {
+      "main": [
+        []
+      ]
+    },
+    "Split Out": {
+      "main": [
+        [
+          {
+            "node": "Check phone number is registered in WhatsApp.1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "pessoas_afrente=0?": {
+      "main": [
+        [
+          {
+            "node": "edit_joined_fila_vazia",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "edit_joined",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "edit_joined_fila_vazia": {
+      "main": [
+        [
+          {
+            "node": "Split Out",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wait": {
+      "main": [
+        [
+          {
+            "node": "Send a text message2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "edit_delayed": {
+      "main": [
+        []
+      ]
+    },
+    "edit_lunch_start": {
+      "main": [
+        [
+          {
+            "node": "Split Out",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "edit_lunch_end": {
+      "main": [
+        [
+          {
+            "node": "Split Out",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "edit_joined_lunch": {
+      "main": [
+        [
+          {
+            "node": "Split Out",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "edit_joined_pre_open": {
+      "main": [
+        [
+          {
+            "node": "Split Out",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "edit_lunch_pre_opened_end": {
+      "main": [
+        [
+          {
+            "node": "Split Out",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "edit_lunch_alert_no_service": {
+      "main": [
+        [
+          {
+            "node": "Telegram1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "edit_lunch_alert_overtime": {
+      "main": [
+        [
+          {
+            "node": "Telegram1",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Send a text message1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Check phone number is registered in WhatsApp.1": {
+      "main": [
+        [
+          {
+            "node": "If",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Start Typing1": {
+      "main": [
+        [
+          {
+            "node": "Wait",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send a text message1": {
+      "main": [
+        []
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "versionId": "bfce600e-3e5f-4ebf-b440-325f047a504c",
+  "meta": {
+    "instanceId": "d4e37845a647a12b6a7a035bf7160e477fe76eaff3797bfeee3c57876702d64d"
+  },
+  "id": "5qCow5CHMBvA6HJA",
+  "tags": []
+}

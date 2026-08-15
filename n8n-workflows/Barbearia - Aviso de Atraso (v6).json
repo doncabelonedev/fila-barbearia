@@ -1,0 +1,186 @@
+{
+  "name": "Barbearia - Aviso de Atraso (v6)",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "minutes"
+            }
+          ]
+        }
+      },
+      "id": "7df345c8-facd-455d-a721-52a6e3c47451",
+      "name": "A cada 5 min",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        3728,
+        -912
+      ],
+      "notesInFlow": true,
+      "notes": "Dispara o ciclo de verificação de atraso."
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "-- =====================================================================\n-- 1) Configurações da loja (1 linha) + flag \"pode rodar\"\n-- =====================================================================\nWITH cfg AS (\n  SELECT\n    COALESCE(base_queue_time, 30)                  AS base_queue_time,\n    COALESCE(tracking_url_base, '')                AS tracking_url_base,\n    (    COALESCE(manual_status, 'auto') = 'auto'\n     AND NOT COALESCE(is_lunch_paused, false)\n     AND NOT COALESCE(is_pre_opening,  false) )    AS pode_rodar\n  FROM public.shop_settings\n  LIMIT 1\n),\n\n-- =====================================================================\n-- 2) Quem está 'serving' (position = 1) e JÁ passou do service_duration\n--    -> nova duração = tempo decorrido + 10 min (teto 180).\n--    Ancorar em now() garante que sempre sobrem ~10 min de folga.\n--    A condição de atraso está NESTA linha, então cada +10 só volta\n--    a acontecer 10 minutos depois. Sem loop, sem número gigante.\n-- =====================================================================\nbump AS (\n  UPDATE public.queue q\n     SET service_duration = LEAST(\n           CEIL(EXTRACT(EPOCH FROM (now() - q.service_start)) / 60)::int + 10,\n           180\n         )\n   WHERE q.status = 'serving'\n     AND q.service_start IS NOT NULL\n     AND q.service_start > now() - interval '8 hours'   -- rede de proteção\n     AND now() - q.service_start > make_interval(mins => COALESCE(q.service_duration, 30))\n     AND (SELECT pode_rodar FROM cfg)\n  RETURNING q.id, q.position, q.service_start, q.service_duration\n),\n\n-- =====================================================================\n-- 3) Minutos que ainda faltam no atendimento atual (já com o +10).\n--    Se ninguém atrasou, esta CTE vem vazia e o workflow para aqui.\n-- =====================================================================\nrestante AS (\n  SELECT GREATEST(\n           CEIL(\n             EXTRACT(EPOCH FROM\n               (service_start + make_interval(mins => service_duration)) - now()\n             ) / 60\n           )::int, 1\n         ) AS min_restante\n  FROM bump\n  ORDER BY position\n  LIMIT 1\n),\n\n-- =====================================================================\n-- 4) Fila de espera COMPLETA (inclui os manuais, que ocupam cadeira).\n--    min_antes = soma do service_duration de quem está na frente.\n--    A posição é o próprio q.position: quem está em serving é o 1.\n-- =====================================================================\nfila AS (\n  SELECT\n    q.id                                        AS queue_id,\n    q.code,\n    q.position,\n    q.is_manual,\n    q.last_delay_sent_at,\n    c.name                                      AS customer_name,\n    c.phone                                     AS phone_raw,\n    CASE WHEN left(regexp_replace(c.phone, '\\D', '', 'g'), 2) = '55'\n         THEN        regexp_replace(c.phone, '\\D', '', 'g')\n         ELSE '55' || regexp_replace(c.phone, '\\D', '', 'g')\n    END                                         AS phone,\n    cfg.tracking_url_base,\n    CAST(COALESCE(\n      SUM(COALESCE(q.service_duration, cfg.base_queue_time))\n        OVER (ORDER BY q.position ROWS BETWEEN UNBOUNDED PRECEDING AND 1 PRECEDING)\n    , 0) AS int)                                AS min_antes\n  FROM public.queue q\n  JOIN public.customers c ON c.id = q.customer_id\n  CROSS JOIN cfg\n  WHERE q.status = 'waiting'\n)\n\n-- =====================================================================\n-- 5) Quem recebe a mensagem agora, com o horário já arredondado.\n--    Arredonda para o múltiplo de 5 min MAIS PRÓXIMO, replicando o\n--    roundToNearest5() de src/hooks/useQueue.ts (Math.round).\n--    O date_trunc('minute') descarta os segundos ANTES de arredondar,\n--    igual ao getMinutes() do JS -- sem isso o site e o WhatsApp\n--    divergiriam em 5 min sempre que os segundos passassem de :30.\n--    eta_hora sai em America/Sao_Paulo (o banco guarda tudo em UTC).\n-- =====================================================================\nSELECT\n  s.queue_id,\n  s.code,\n  s.customer_name,\n  s.phone,\n  s.tracking_url_base,\n  s.position,\n  s.pessoas_afrente,\n  GREATEST(CEIL(EXTRACT(EPOCH FROM (s.eta_ts - now())) / 60)::int, 1)     AS eta_min,\n  to_char(s.eta_ts AT TIME ZONE 'America/Sao_Paulo', 'HH24:MI')            AS eta_hora\nFROM (\n  SELECT\n    f.queue_id,\n    f.code,\n    f.customer_name,\n    f.phone,\n    f.tracking_url_base,\n    f.position,\n    f.position - 1 AS pessoas_afrente,\n    to_timestamp(\n      (\n        ROUND(\n          EXTRACT(EPOCH FROM\n            date_trunc('minute', now() + make_interval(mins => r.min_restante + f.min_antes))\n          ) / 300.0\n        ) * 300\n      )::double precision\n    ) AS eta_ts\n  FROM fila f\n  CROSS JOIN restante r\n  WHERE COALESCE(f.is_manual, false) = false\n    AND f.phone_raw NOT LIKE 'manual_%'\n    AND ( f.last_delay_sent_at IS NULL\n          OR now() - f.last_delay_sent_at > interval '10 minutes' )\n) s\nORDER BY s.position",
+        "options": {}
+      },
+      "id": "e1f96bb4-1ae2-4b90-9667-1548b6b987f7",
+      "name": "Verifica Atraso e Busca Fila",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.5,
+      "position": [
+        3952,
+        -912
+      ],
+      "alwaysOutputData": false,
+      "notesInFlow": true,
+      "credentials": {
+        "postgres": {
+          "id": "uEJcXBMdzMROjoRJ",
+          "name": "filabarbearia - conta wagner producao"
+        }
+      },
+      "notes": "Config + bump de +10min + fila a avisar (eta_hora arredondado em 5min igual ao site). 0 linhas = nada a fazer."
+    },
+    {
+      "parameters": {
+        "resource": "Contacts",
+        "operation": "Check Exists",
+        "session": "=default",
+        "phone": "={{ $json.phone }}",
+        "requestOptions": {}
+      },
+      "id": "2a7bc6b4-389d-4498-a90d-9779bcdfee1f",
+      "name": "Valida WhatsApp",
+      "type": "@devlikeapro/n8n-nodes-waha.WAHA",
+      "typeVersion": 202502,
+      "position": [
+        4176,
+        -912
+      ],
+      "notesInFlow": true,
+      "credentials": {
+        "wahaApi": {
+          "id": "SnPbBDMOKqjxdZQo",
+          "name": "WAHA - doncabellone"
+        }
+      },
+      "onError": "continueRegularOutput",
+      "notes": "Recebe 55+DDD+numero e devolve o chatId (@lid)."
+    },
+    {
+      "parameters": {
+        "resource": "Chatting",
+        "operation": "Send Text",
+        "session": "=default",
+        "chatId": "={{ $json.chatId || $json[0]?.chatId }}",
+        "text": "=⚠️ *Houve um atraso no atendimento!*\n\nOlá {{ $('Verifica Atraso e Busca Fila').item.json.customer_name }},\n{{ $('Verifica Atraso e Busca Fila').item.json.pessoas_afrente > 0 ? '👥 Há ' + $('Verifica Atraso e Busca Fila').item.json.pessoas_afrente + ' pessoa(s) na sua frente\\n' : '' }}⏳ NOVO horário estimado: *{{ $('Verifica Atraso e Busca Fila').item.json.eta_hora }}* (~{{ $('Verifica Atraso e Busca Fila').item.json.eta_min }} min)\n\n⚠️ _O horário exibido é apenas uma PREVISÃO, podendo sofrer variações para MAIS ou para MENOS._\n\n👉 Para não perder sua vez, já venha para a barbearia.\n\nAcompanhe em tempo real: {{ $('Verifica Atraso e Busca Fila').item.json.tracking_url_base }}",
+        "linkPreview": false,
+        "requestOptions": {}
+      },
+      "id": "46ac2848-c7c5-4e1d-9bfd-fd554f6b867f",
+      "name": "Envia Aviso WhatsApp",
+      "type": "@devlikeapro/n8n-nodes-waha.WAHA",
+      "typeVersion": 202502,
+      "position": [
+        4400,
+        -912
+      ],
+      "notesInFlow": true,
+      "credentials": {
+        "wahaApi": {
+          "id": "SnPbBDMOKqjxdZQo",
+          "name": "WAHA - doncabellone"
+        }
+      },
+      "onError": "continueRegularOutput",
+      "notes": "Texto da mensagem fica aqui — edite direto neste campo."
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "UPDATE public.queue\nSET last_delay_sent_at = now(),\n    last_sent_eta      = {{ $('Verifica Atraso e Busca Fila').item.json.eta_min }}\nWHERE id = '{{ $('Verifica Atraso e Busca Fila').item.json.queue_id }}'::uuid",
+        "options": {}
+      },
+      "id": "5ae02065-958e-4395-8117-bc802e40d8ce",
+      "name": "Marca Aviso Enviado",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.5,
+      "position": [
+        4608,
+        -912
+      ],
+      "notesInFlow": true,
+      "credentials": {
+        "postgres": {
+          "id": "uEJcXBMdzMROjoRJ",
+          "name": "filabarbearia - conta wagner producao"
+        }
+      },
+      "notes": "Grava cooldown de 10 min + sincroniza last_sent_eta com o site."
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "A cada 5 min": {
+      "main": [
+        [
+          {
+            "node": "Verifica Atraso e Busca Fila",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Verifica Atraso e Busca Fila": {
+      "main": [
+        [
+          {
+            "node": "Valida WhatsApp",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Valida WhatsApp": {
+      "main": [
+        [
+          {
+            "node": "Envia Aviso WhatsApp",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Envia Aviso WhatsApp": {
+      "main": [
+        [
+          {
+            "node": "Marca Aviso Enviado",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "versionId": "93e4465c-2066-47e0-adfa-df9ebbe265be",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "d4e37845a647a12b6a7a035bf7160e477fe76eaff3797bfeee3c57876702d64d"
+  },
+  "id": "lXdN1ADFaHkkPjyZ",
+  "tags": []
+}

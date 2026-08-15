@@ -39,7 +39,7 @@ export default function AdminCampaigns() {
   const [showSent, setShowSent] = useState(false);
   const [savingDraft, setSavingDraft] = useState(false);
   const [showForm, setShowForm] = useState(false);
-  const { shopName, logoUrl } = useShopSettings();
+  const { shopName, logoUrl, campaignWebhookUrl } = useShopSettings();
 
   async function fetchDrafts() {
     const { data, error } = await supabase
@@ -121,8 +121,8 @@ export default function AdminCampaigns() {
       const { error } = await supabase
         .from("campaigns")
         .insert({
-          title: campaignTitle,
-          message: messageText,
+          title: campaignTitle.trim(),
+          message: messageText.trim(),
           is_draft: true,
           selected_contact_ids: selectedContacts.map(c => c.id),
         });
@@ -137,10 +137,13 @@ export default function AdminCampaigns() {
     }
   };
 
-  const handleLoadDraft = (draft: { id: string; title: string; message: string }) => {
+  const handleLoadDraft = (draft: { id: string; title: string; message: string; selected_contact_ids?: string[] }) => {
     setCampaignTitle(draft.title);
     setMessageText(draft.message);
-    setSelectedContacts([]);
+    const restoredContacts = availableContacts.filter((c) =>
+      draft.selected_contact_ids?.includes(c.id),
+    );
+    setSelectedContacts(restoredContacts);
     setShowDrafts(false);
     toast.success("Rascunho carregado!");
   };
@@ -220,16 +223,29 @@ export default function AdminCampaigns() {
 
   const handleSelectAll = () => {
     const filtered = availableContacts.filter(
-      (c) => !selectedContacts.find((s) => s.id === c.id)
+      (c) =>
+        !selectedContacts.find((s) => s.id === c.id) &&
+        (c.name.toLowerCase().includes(searchAvailable.toLowerCase()) ||
+          c.phone.includes(searchAvailable)),
     );
     setSelectedContacts([...selectedContacts, ...filtered]);
   };
 
   const handleDeselectAll = () => {
-    setSelectedContacts([]);
+    if (!searchSelected) {
+      setSelectedContacts([]);
+      return;
+    }
+    setSelectedContacts(
+      selectedContacts.filter(
+        (c) =>
+          !(
+            c.name.toLowerCase().includes(searchSelected.toLowerCase()) ||
+            c.phone.includes(searchSelected)
+          ),
+      ),
+    );
   };
-
-  const CAMPAIGN_WEBHOOK_URL = "https://n8ndes.ltech.app.br/webhook/campanha";
 
   const handleSendCampaign = async () => {
     if (
@@ -243,28 +259,48 @@ export default function AdminCampaigns() {
       return;
     }
 
+    if (!campaignWebhookUrl) {
+      toast.error(
+        "URL do webhook de campanhas não configurada. Configure em Admin → Configurações.",
+      );
+      return;
+    }
+
     setSending(true);
     try {
       const payload = {
-        titulo_campanha: campaignTitle,
-        mensagem_texto: messageText,
+        titulo_campanha: campaignTitle.trim(),
+        mensagem_texto: messageText.trim(),
         destinatarios: selectedContacts.map((c) => ({
           nome: c.name,
           numero: c.phone,
         })),
       };
 
-      await fetch(CAMPAIGN_WEBHOOK_URL, {
+      let finalWebhookUrl = campaignWebhookUrl.trim();
+      if (
+        !finalWebhookUrl.startsWith("http://") &&
+        !finalWebhookUrl.startsWith("https://")
+      ) {
+        finalWebhookUrl = "https://" + finalWebhookUrl;
+      }
+
+      const response = await fetch(finalWebhookUrl, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),
       });
 
+      if (!response.ok) {
+        throw new Error(`Webhook respondeu ${response.status}`);
+      }
+
       await supabase.from("campaigns").insert({
-        title: campaignTitle,
-        message: messageText,
+        title: campaignTitle.trim(),
+        message: messageText.trim(),
         is_draft: false,
         recipient_count: selectedContacts.length,
+        selected_contact_ids: selectedContacts.map((c) => c.id),
       });
 
       toast.success(
@@ -404,7 +440,7 @@ export default function AdminCampaigns() {
                           </div>
                           <div className="flex flex-col gap-1 ml-2">
                             <button
-                              onClick={() => { handleLoadDraft({ id: campaign.id, title: campaign.title, message: campaign.message }); setShowForm(true); }}
+                              onClick={() => { handleLoadDraft({ id: campaign.id, title: campaign.title, message: campaign.message, selected_contact_ids: campaign.selected_contact_ids }); setShowForm(true); }}
                               className="p-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg transition-colors"
                               title="Carregar"
                             >

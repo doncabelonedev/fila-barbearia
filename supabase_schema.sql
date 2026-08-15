@@ -79,6 +79,7 @@ create table IF NOT EXISTS public.shop_settings (
   shop_name text null default 'BarberQueue'::text,
   logo_url text null,
   webhook_url text null,
+  campaign_webhook_url text null,
   tracking_url_base text null,
   base_queue_time smallint null,
   max_queue_time text null,

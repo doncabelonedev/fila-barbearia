@@ -13,6 +13,7 @@ interface ShopSettingsContextType {
   shopName: string;
   logoUrl: string | null;
   webhookUrl: string | null;
+  campaignWebhookUrl: string | null;
   trackingUrlBase: string | null;
   baseQueueTime: number | null;
   isLunchPaused: boolean;
@@ -54,6 +55,7 @@ export function useShopSettingsHook() {
     shopName: getInitialShopName(),
     logoUrl: getInitialLogoUrl(),
     webhookUrl: null as string | null,
+    campaignWebhookUrl: null as string | null,
     trackingUrlBase: null as string | null,
     baseQueueTime: null as number | null,
     isLunchPaused: false,
@@ -70,7 +72,7 @@ export function useShopSettingsHook() {
       const { data } = await supabase
         .from("shop_settings")
         .select(
-          "theme, shop_name, logo_url, webhook_url, tracking_url_base, base_queue_time, is_lunch_paused, is_pre_opening",
+          "theme, shop_name, logo_url, webhook_url, campaign_webhook_url, tracking_url_base, base_queue_time, is_lunch_paused, is_pre_opening",
         )
         .limit(1)
         .maybeSingle();
@@ -89,6 +91,7 @@ export function useShopSettingsHook() {
           shopName: fetchedShopName,
           logoUrl: fetchedLogoUrl,
           webhookUrl: data.webhook_url,
+          campaignWebhookUrl: data.campaign_webhook_url,
           trackingUrlBase: data.tracking_url_base,
           baseQueueTime: data.base_queue_time,
           isLunchPaused: data.is_lunch_paused ?? false,
@@ -120,6 +123,7 @@ export function useShopSettingsHook() {
               shopName: fetchedShopName,
               logoUrl: fetchedLogoUrl,
               webhookUrl: payload.new.webhook_url,
+              campaignWebhookUrl: payload.new.campaign_webhook_url,
               trackingUrlBase: payload.new.tracking_url_base,
               baseQueueTime: payload.new.base_queue_time,
               isLunchPaused: payload.new.is_lunch_paused ?? false,
@@ -170,6 +174,7 @@ export function useShopSettings() {
       shopName: "BarberQueue",
       logoUrl: null as string | null,
       webhookUrl: null as string | null,
+      campaignWebhookUrl: null as string | null,
       trackingUrlBase: null as string | null,
       baseQueueTime: null as number | null,
       isLunchPaused: false,

@@ -111,7 +111,7 @@ export default function AdminHeader({
           </button>
           <button
             onClick={() => onNavigate("/admin/campaigns")}
-            className="rounded-xl p-2 text-neutral-400 hover:bg-neutral-800 transition-colors hidden"
+            className="rounded-xl p-2 text-neutral-400 hover:bg-neutral-800 transition-colors"
             title="Campanhas"
           >
             <Megaphone className="h-6 w-6" />

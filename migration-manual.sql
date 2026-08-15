@@ -101,3 +101,39 @@ INSERT INTO public.barber_services (id, label, duration_minutes, display_order, 
   ('pezinho', 'Só o pezinho', 10, 2, true),
   ('sobrancelha', 'Sobrancelha', 5, 3, true)
 ON CONFLICT (id) DO NOTHING;
+
+
+-- =====================================
+-- Migração 15/08/2026 — Backfill: tabela campaigns (já existia em prod, faltava registrar aqui)
+-- =====================================
+create table IF NOT EXISTS public.campaigns (
+  id uuid not null default gen_random_uuid (),
+  title text not null,
+  message text not null,
+  is_draft boolean not null default false,
+  selected_contact_ids text[] null default '{}'::text[],
+  recipient_count integer not null default 0,
+  created_at timestamp with time zone null default now(),
+  updated_at timestamp with time zone null default now(),
+  constraint campaigns_pkey primary key (id)
+) TABLESPACE pg_default;
+
+ALTER TABLE public.campaigns ENABLE ROW LEVEL SECURITY;
+
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_policies
+    WHERE schemaname = 'public' AND tablename = 'campaigns' AND policyname = 'full_access_campaigns'
+  ) THEN
+    CREATE POLICY "full_access_campaigns" ON public.campaigns
+      FOR ALL TO anon USING (true) WITH CHECK (true);
+  END IF;
+END $$;
+
+
+-- =====================================
+-- Migração 15/08/2026 — URL de webhook de campanhas configurável (shop_settings)
+-- =====================================
+ALTER TABLE public.shop_settings
+  ADD COLUMN IF NOT EXISTS campaign_webhook_url text null;

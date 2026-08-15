@@ -36,10 +36,17 @@ export default function AdminSettings() {
   const [shopName, setShopName] = useState("BarberQueue");
   const [logoUrl, setLogoUrl] = useState("");
   const [webhookUrl, setWebhookUrl] = useState("");
+  const [campaignWebhookUrl, setCampaignWebhookUrl] = useState("");
   const [trackingUrlBase, setTrackingUrlBase] = useState("");
   const [baseQueueTime, setBaseQueueTime] = useState(30);
   const [isTestingWebhook, setIsTestingWebhook] = useState(false);
   const [webhookTestResult, setWebhookTestResult] = useState<{
+    success: boolean;
+    message: string;
+  } | null>(null);
+  const [isTestingCampaignWebhook, setIsTestingCampaignWebhook] =
+    useState(false);
+  const [campaignWebhookTestResult, setCampaignWebhookTestResult] = useState<{
     success: boolean;
     message: string;
   } | null>(null);
@@ -73,7 +80,7 @@ export default function AdminSettings() {
       const { data: settings } = await supabase
         .from("shop_settings")
         .select(
-          "whatsapp_number, shop_name, logo_url, webhook_url, tracking_url_base, base_queue_time",
+          "whatsapp_number, shop_name, logo_url, webhook_url, campaign_webhook_url, tracking_url_base, base_queue_time",
         )
         .limit(1)
         .maybeSingle();
@@ -92,6 +99,9 @@ export default function AdminSettings() {
       }
       if (settings?.webhook_url) {
         setWebhookUrl(settings.webhook_url);
+      }
+      if (settings?.campaign_webhook_url) {
+        setCampaignWebhookUrl(settings.campaign_webhook_url);
       }
       if (settings?.tracking_url_base) {
         setTrackingUrlBase(settings.tracking_url_base);
@@ -136,6 +146,7 @@ export default function AdminSettings() {
             shop_name: shopName,
             logo_url: logoUrl || null,
             webhook_url: webhookUrl || null,
+            campaign_webhook_url: campaignWebhookUrl || null,
             tracking_url_base: trackingUrlBase || null,
             base_queue_time: baseQueueTime,
           })
@@ -148,6 +159,7 @@ export default function AdminSettings() {
             shop_name: shopName,
             logo_url: logoUrl || null,
             webhook_url: webhookUrl || null,
+            campaign_webhook_url: campaignWebhookUrl || null,
             tracking_url_base: trackingUrlBase || null,
             base_queue_time: baseQueueTime,
           },
@@ -434,6 +446,31 @@ export default function AdminSettings() {
     }
   };
 
+  const handleTestCampaignWebhook = async () => {
+    if (!campaignWebhookUrl) {
+      setCampaignWebhookTestResult({
+        success: false,
+        message: "Preencha a URL do webhook de campanhas primeiro.",
+      });
+      return;
+    }
+    setIsTestingCampaignWebhook(true);
+    setCampaignWebhookTestResult(null);
+    try {
+      const result = await webhookService.testCampaignWebhook(
+        campaignWebhookUrl,
+      );
+      setCampaignWebhookTestResult(result);
+    } catch (error) {
+      setCampaignWebhookTestResult({
+        success: false,
+        message: "Erro inesperado ao testar o webhook.",
+      });
+    } finally {
+      setIsTestingCampaignWebhook(false);
+    }
+  };
+
   if (loading) {
     return (
       <div className="flex min-h-screen items-center justify-center">
@@ -606,6 +643,38 @@ export default function AdminSettings() {
               <p className="mt-2 text-xs text-neutral-500">
                 URL que receberá os eventos de atualização da fila (JOINED,
                 NEAR, NEXT, UPDATE, DELAYED).
+              </p>
+            </div>
+            <div>
+              <label className="block text-sm font-bold text-neutral-300 mb-1">
+                URL do Webhook — Campanhas
+              </label>
+              <div className="flex flex-col sm:flex-row gap-2">
+                <input
+                  type="url"
+                  value={campaignWebhookUrl}
+                  onChange={(e) => setCampaignWebhookUrl(e.target.value)}
+                  placeholder="https://seu-webhook.com/campanha"
+                  className="flex-1 rounded-xl border border-neutral-700 bg-neutral-800 px-4 py-3 text-lg text-white outline-none focus:border-emerald-500 transition-all"
+                />
+                <button
+                  onClick={handleTestCampaignWebhook}
+                  disabled={isTestingCampaignWebhook || !campaignWebhookUrl}
+                  className="px-4 py-3 bg-neutral-700 text-neutral-200 rounded-xl font-medium hover:bg-neutral-600 disabled:opacity-50 transition-colors whitespace-nowrap"
+                >
+                  {isTestingCampaignWebhook ? "Testando..." : "Testar Envio"}
+                </button>
+              </div>
+              {campaignWebhookTestResult && (
+                <p
+                  className={`mt-2 text-sm font-medium ${campaignWebhookTestResult.success ? "text-emerald-400" : "text-red-500"}`}
+                >
+                  {campaignWebhookTestResult.message}
+                </p>
+              )}
+              <p className="mt-2 text-xs text-neutral-500">
+                URL que receberá os disparos de campanhas em massa (tela
+                Campanhas).
               </p>
             </div>
             <div>

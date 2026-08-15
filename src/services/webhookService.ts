@@ -3,6 +3,12 @@ import { calculateEstimatedMinutes, calculateEstimatedServiceTimeDynamic } from 
 
 export type WebhookEvent = "JOINED" | "JOINED_IN_LUNCH" | "JOINED_IN_PRE_OPENING" | "NEAR" | "NEXT" | "UPDATE" | "DELAYED" | "LUNCH_START" | "LUNCH_END";
 
+export interface CampaignWebhookPayload {
+  titulo_campanha: string;
+  mensagem_texto: string;
+  destinatarios: { nome: string; numero: string }[];
+}
+
 export interface WebhookPayload {
   type: "QUEUE_UPDATE";
   event: WebhookEvent;
@@ -82,6 +88,76 @@ class WebhookService {
     } catch (fetchError) {
       console.warn(
         "Initial fetch failed for test (likely CORS). Trying no-cors fallback...",
+        fetchError,
+      );
+
+      try {
+        await fetch(finalWebhookUrl, {
+          method: "POST",
+          mode: "no-cors",
+          headers: {
+            "Content-Type": "text/plain",
+          },
+          body: JSON.stringify(payload),
+        });
+        return {
+          success: true,
+          message:
+            "Webhook enviado usando modo fallback (no-cors). Verifique seu n8n.",
+        };
+      } catch (fallbackError) {
+        return {
+          success: false,
+          message: `Erro de rede ao enviar webhook: ${fallbackError instanceof Error ? fallbackError.message : "Desconhecido"}`,
+        };
+      }
+    }
+  }
+
+  public async testCampaignWebhook(
+    webhookUrl: string,
+  ): Promise<{ success: boolean; message: string }> {
+    if (!webhookUrl)
+      return { success: false, message: "URL do webhook não configurada." };
+
+    const payload: CampaignWebhookPayload = {
+      titulo_campanha: "Campanha Teste",
+      mensagem_texto: "Esta é uma mensagem de teste de campanha.",
+      destinatarios: [{ nome: "Cliente Teste", numero: "5511999999999" }],
+    };
+
+    let finalWebhookUrl = webhookUrl.trim();
+    if (
+      !finalWebhookUrl.startsWith("http://") &&
+      !finalWebhookUrl.startsWith("https://")
+    ) {
+      finalWebhookUrl = "https://" + finalWebhookUrl;
+    }
+
+    try {
+      const response = await fetch(finalWebhookUrl, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Accept: "application/json",
+        },
+        body: JSON.stringify(payload),
+      });
+
+      if (response.ok) {
+        return {
+          success: true,
+          message: "Webhook enviado com sucesso! Verifique seu n8n.",
+        };
+      } else {
+        return {
+          success: false,
+          message: `Erro HTTP: ${response.status} ${response.statusText}`,
+        };
+      }
+    } catch (fetchError) {
+      console.warn(
+        "Initial fetch failed for campaign test (likely CORS). Trying no-cors fallback...",
         fetchError,
       );
 

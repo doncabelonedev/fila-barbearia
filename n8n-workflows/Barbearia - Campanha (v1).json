@@ -1,0 +1,342 @@
+{
+  "name": "Barbearia - Campanha",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "campanha",
+        "options": {
+          "allowedOrigins": "*"
+        }
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        -1600,
+        800
+      ],
+      "id": "283417fb-863b-4d91-aaca-e4e6a0cdc4a4",
+      "name": "Webhook",
+      "webhookId": "c8a11ae2-be45-4e05-a248-839e55e31775"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "4723974b-486e-47d5-ba59-522ff3229966",
+              "name": "titulo_campanha",
+              "value": "={{ $json.body.titulo_campanha }}",
+              "type": "string"
+            },
+            {
+              "id": "94da2511-283e-4e03-9e1e-429d0b29149a",
+              "name": "mensagem_texto",
+              "value": "={{ $json.body.mensagem_texto }}",
+              "type": "string"
+            },
+            {
+              "id": "138f8258-19c8-40c9-8714-cd6ebc4aa47c",
+              "name": "destinatarios",
+              "value": "={{ $json.body.destinatarios }}",
+              "type": "array"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -1360,
+        800
+      ],
+      "id": "7e771b5a-6922-448d-8ce7-e7f847ff3c66",
+      "name": "Extrair Dados"
+    },
+    {
+      "parameters": {
+        "jsCode": "// WhatsApp usa *negrito* (asterisco simples) e _itálico_, mas o admin digita\n// no padrão Markdown (**negrito**, *itálico*). Converte antes de enviar,\n// senão o cliente recebe os asteriscos literais no WhatsApp.\nconst raw = String($input.first().json.mensagem_texto || '');\nconst BOLD_MARK = '\\u0000';\n\nlet formatted = raw.replace(/\\*\\*(.+?)\\*\\*/g, (_, t) => `${BOLD_MARK}${t}${BOLD_MARK}`);\nformatted = formatted.replace(/\\*(.+?)\\*/g, '_$1_');\nformatted = formatted.split(BOLD_MARK).join('*');\n\nreturn [{\n  json: {\n    ...$input.first().json,\n    mensagem_formatada: formatted\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -1120,
+        800
+      ],
+      "id": "048a65cd-caab-4192-82e9-e88faa6a9b71",
+      "name": "Formatar Mensagem WhatsApp"
+    },
+    {
+      "parameters": {
+        "fieldToSplitOut": "destinatarios",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.splitOut",
+      "typeVersion": 1,
+      "position": [
+        -880,
+        800
+      ],
+      "id": "244f49b7-cc63-4aa0-a059-191ddb0b3df0",
+      "name": "Split Out"
+    },
+    {
+      "parameters": {
+        "batchSize": 1,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [
+        -640,
+        800
+      ],
+      "id": "da4aa67d-e0a3-4768-8192-043601c736df",
+      "name": "Loop Over Items"
+    },
+    {
+      "parameters": {
+        "resource": "Contacts",
+        "operation": "Check Exists",
+        "session": "=default",
+        "phone": "={{ $json.numero }}",
+        "requestOptions": {}
+      },
+      "type": "@devlikeapro/n8n-nodes-waha.WAHA",
+      "typeVersion": 202502,
+      "position": [
+        -400,
+        960
+      ],
+      "id": "993da514-e1cd-4922-a98c-a8f71550d671",
+      "name": "Verificar Número",
+      "credentials": {
+        "wahaApi": {
+          "id": "SnPbBDMOKqjxdZQo",
+          "name": "WAHA - doncabellone"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "8b19ab59-d2ea-4a2d-bf94-a02eb6f17e6e",
+              "leftValue": "={{ $json.numberExists }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        -160,
+        960
+      ],
+      "id": "0b7af641-f7fb-4829-a03f-1259a28c5856",
+      "name": "Número existe?"
+    },
+    {
+      "parameters": {
+        "resource": "Chatting",
+        "operation": "Start Typing",
+        "session": "=default",
+        "chatId": "={{ $('Verificar Número').item.json.chatId }}",
+        "requestOptions": {}
+      },
+      "type": "@devlikeapro/n8n-nodes-waha.WAHA",
+      "typeVersion": 202502,
+      "position": [
+        80,
+        880
+      ],
+      "id": "50a3956a-f822-4fc4-8008-c27c9e29c6c6",
+      "name": "Start Typing"
+    },
+    {
+      "parameters": {
+        "amount": "={{ Math.floor(Math.random() * 3) + 3 }}"
+      },
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [
+        320,
+        880
+      ],
+      "id": "9852eb70-2a72-4e82-8588-ceb469e5bc38",
+      "name": "Wait",
+      "webhookId": "474cfc48-5886-4a7a-aace-ea704f8d2f27",
+      "notes": "tempo aleatório entre 3 e 5 segundos, pra evitar bloqueio do WhatsApp em disparo em massa"
+    },
+    {
+      "parameters": {
+        "resource": "Chatting",
+        "operation": "Send Text",
+        "session": "=default",
+        "chatId": "={{ $('Verificar Número').item.json.chatId }}",
+        "text": "={{ $('Formatar Mensagem WhatsApp').item.json.mensagem_formatada }}",
+        "linkPreview": false,
+        "requestOptions": {}
+      },
+      "type": "@devlikeapro/n8n-nodes-waha.WAHA",
+      "typeVersion": 202502,
+      "position": [
+        560,
+        880
+      ],
+      "id": "81c58ad7-b9cb-42fb-997a-f0ec6ad6b127",
+      "name": "Enviar Mensagem",
+      "credentials": {
+        "wahaApi": {
+          "id": "SnPbBDMOKqjxdZQo",
+          "name": "WAHA - doncabellone"
+        }
+      }
+    }
+  ],
+  "connections": {
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "Extrair Dados",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extrair Dados": {
+      "main": [
+        [
+          {
+            "node": "Formatar Mensagem WhatsApp",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Formatar Mensagem WhatsApp": {
+      "main": [
+        [
+          {
+            "node": "Split Out",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Split Out": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Items",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Loop Over Items": {
+      "main": [
+        [],
+        [
+          {
+            "node": "Verificar Número",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Verificar Número": {
+      "main": [
+        [
+          {
+            "node": "Número existe?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Número existe?": {
+      "main": [
+        [
+          {
+            "node": "Start Typing",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Loop Over Items",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Start Typing": {
+      "main": [
+        [
+          {
+            "node": "Wait",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wait": {
+      "main": [
+        [
+          {
+            "node": "Enviar Mensagem",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Enviar Mensagem": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Items",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "meta": {
+    "instanceId": "d4e37845a647a12b6a7a035bf7160e477fe76eaff3797bfeee3c57876702d64d"
+  },
+  "tags": []
+}

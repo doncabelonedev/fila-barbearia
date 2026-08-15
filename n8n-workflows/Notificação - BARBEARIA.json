@@ -216,30 +216,6 @@
                 },
                 "conditions": [
                   {
-                    "id": "a8ba85a0-352b-475c-badc-849e88f20380",
-                    "leftValue": "={{ $json.evento }}",
-                    "rightValue": "DELAYED",
-                    "operator": {
-                      "type": "string",
-                      "operation": "equals"
-                    }
-                  }
-                ],
-                "combinator": "and"
-              },
-              "renameOutput": true,
-              "outputKey": "DELAYED"
-            },
-            {
-              "conditions": {
-                "options": {
-                  "caseSensitive": true,
-                  "leftValue": "",
-                  "typeValidation": "strict",
-                  "version": 3
-                },
-                "conditions": [
-                  {
                     "id": "a0c52c1e-36ce-414d-b05c-e5fed7dea0f5",
                     "leftValue": "={{ $json.evento }}",
                     "rightValue": "LUNCH_START",
@@ -279,81 +255,6 @@
               },
               "renameOutput": true,
               "outputKey": "LUNCH_END"
-            },
-            {
-              "conditions": {
-                "options": {
-                  "caseSensitive": true,
-                  "leftValue": "",
-                  "typeValidation": "strict",
-                  "version": 3
-                },
-                "conditions": [
-                  {
-                    "id": "950d78fd-da56-4e1f-8249-31b533322f66",
-                    "leftValue": "={{ $json.evento }}",
-                    "rightValue": "PRE_OPENING_END",
-                    "operator": {
-                      "type": "string",
-                      "operation": "equals",
-                      "name": "filter.operator.equals"
-                    }
-                  }
-                ],
-                "combinator": "and"
-              },
-              "renameOutput": true,
-              "outputKey": "PRE_OPENING_END"
-            },
-            {
-              "conditions": {
-                "options": {
-                  "caseSensitive": true,
-                  "leftValue": "",
-                  "typeValidation": "strict",
-                  "version": 3
-                },
-                "conditions": [
-                  {
-                    "id": "01dd64a6-10b7-4d9d-99b7-0ad95e7c76ee",
-                    "leftValue": "={{ $json.evento }}",
-                    "rightValue": "BARBER_ALERT_NO_SERVICE",
-                    "operator": {
-                      "type": "string",
-                      "operation": "equals",
-                      "name": "filter.operator.equals"
-                    }
-                  }
-                ],
-                "combinator": "and"
-              },
-              "renameOutput": true,
-              "outputKey": "BARBER_ALERT_NO_SERVICE"
-            },
-            {
-              "conditions": {
-                "options": {
-                  "caseSensitive": true,
-                  "leftValue": "",
-                  "typeValidation": "strict",
-                  "version": 3
-                },
-                "conditions": [
-                  {
-                    "id": "7ed4cf29-4cd0-4130-82e0-04e6091470fb",
-                    "leftValue": "={{ $json.evento }}",
-                    "rightValue": "BARBER_ALERT_OVERTIME",
-                    "operator": {
-                      "type": "string",
-                      "operation": "equals",
-                      "name": "filter.operator.equals"
-                    }
-                  }
-                ],
-                "combinator": "and"
-              },
-              "renameOutput": true,
-              "outputKey": "BARBER_ALERT_OVERTIME"
             }
           ]
         },
@@ -614,29 +515,6 @@
             {
               "id": "7299ded4-4775-41bf-86cc-63664e335f11",
               "name": "mensagem",
-              "value": "=⚠️ Houve um atraso no atendimento!\n\n{{ $('Edit Fields1').item.json.nome_usuario }},\n{{ $json.pessoas_afrente > 0 ? `👥 Há ${$json.pessoas_afrente} pessoa(s) na sua frente` : '' }}\n⏳ NOVO Tempo estimado atendimento: {{ $('Edit Fields1').item.json.estimatedWait }}\n\n⚠️ *O horário exibido é apenas uma PREVISÃO, podendo sofrer variações para MAIS ou para MENOS.*\n\n👉 Para não perder sua vez, já venha para a barbearia",
-              "type": "string"
-            }
-          ]
-        },
-        "options": {}
-      },
-      "type": "n8n-nodes-base.set",
-      "typeVersion": 3.4,
-      "position": [
-        224,
-        1440
-      ],
-      "id": "6e444493-0e06-4b5a-86ac-e80edac09714",
-      "name": "edit_delayed"
-    },
-    {
-      "parameters": {
-        "assignments": {
-          "assignments": [
-            {
-              "id": "7299ded4-4775-41bf-86cc-63664e335f11",
-              "name": "mensagem",
               "value": "=⚠️ Estamos em pausa para o almoço! 🍽️\n\nFique tranquilo, sua posição na fila está garantida!\nSeu novo horário será enviado assim que retornarmos.",
               "type": "string"
             }
@@ -724,95 +602,6 @@
     },
     {
       "parameters": {
-        "assignments": {
-          "assignments": [
-            {
-              "id": "7299ded4-4775-41bf-86cc-63664e335f11",
-              "name": "mensagem",
-              "value": "=✅ Estamos abertos!\n\n{{ $('Edit Fields1').item.json.nome_usuario }},\n👥 Há {{ $json.pessoas_afrente }} pessoa(s) na sua frente\n⏳ Seu horário estimado atualizado: {{ $('Edit Fields1').item.json.estimatedWait }}\n\n⚠️ *O horário exibido é apenas uma PREVISÃO, podendo sofrer variações para MAIS ou para MENOS.*\n\n👉 Para não perder sua vez, já venha para a barbearia",
-              "type": "string"
-            }
-          ]
-        },
-        "options": {}
-      },
-      "type": "n8n-nodes-base.set",
-      "typeVersion": 3.4,
-      "position": [
-        208,
-        2032
-      ],
-      "id": "068bb6f9-489c-4010-b38b-68b1472e9ca4",
-      "name": "edit_lunch_pre_opened_end"
-    },
-    {
-      "parameters": {
-        "assignments": {
-          "assignments": [
-            {
-              "id": "7299ded4-4775-41bf-86cc-63664e335f11",
-              "name": "mensagem",
-              "value": "=⚠️  *Fila aguardando!*\n\nHá clientes esperando e nenhum atendimento foi iniciado.\n  \n👤 Próximo: {{ $('Edit Fields1').item.json.nome_usuario }}\n",
-              "type": "string"
-            }
-          ]
-        },
-        "options": {}
-      },
-      "type": "n8n-nodes-base.set",
-      "typeVersion": 3.4,
-      "position": [
-        208,
-        2240
-      ],
-      "id": "cb2c04cb-8a46-43c9-98e7-ff8c9ad7c8a5",
-      "name": "edit_lunch_alert_no_service"
-    },
-    {
-      "parameters": {
-        "assignments": {
-          "assignments": [
-            {
-              "id": "7299ded4-4775-41bf-86cc-63664e335f11",
-              "name": "mensagem",
-              "value": "=⏰ *Tempo de corte ultrapassado!*\n\nO atendimento atual já passou do tempo estimado.\n\n👤 Cliente: {{ $('Edit Fields1').item.json.nome_usuario }}",
-              "type": "string"
-            }
-          ]
-        },
-        "options": {}
-      },
-      "type": "n8n-nodes-base.set",
-      "typeVersion": 3.4,
-      "position": [
-        208,
-        2480
-      ],
-      "id": "f34e94c1-759e-401c-86ea-11d958ba5768",
-      "name": "edit_lunch_alert_overtime"
-    },
-    {
-      "parameters": {
-        "chatId": "=81996552",
-        "text": "atrasado",
-        "additionalFields": {
-          "appendAttribution": false,
-          "parse_mode": "HTML"
-        }
-      },
-      "type": "n8n-nodes-base.telegram",
-      "typeVersion": 1.2,
-      "position": [
-        496,
-        2752
-      ],
-      "id": "3d6b3a5d-a620-4d24-a86a-84899096cd9c",
-      "name": "Telegram1",
-      "webhookId": "750d64a0-1441-449b-a4a9-cee01c2e930f",
-      "disabled": true
-    },
-    {
-      "parameters": {
         "resource": "Chatting",
         "operation": "Send Text",
         "session": "=default",
@@ -875,31 +664,6 @@
       ],
       "id": "9d557bb6-b988-4d11-b743-e15d0022e6ee",
       "name": "Start Typing1",
-      "credentials": {
-        "wahaApi": {
-          "id": "SnPbBDMOKqjxdZQo",
-          "name": "WAHA - doncabellone"
-        }
-      }
-    },
-    {
-      "parameters": {
-        "resource": "Chatting",
-        "operation": "Send Text",
-        "session": "=default",
-        "chatId": "=120363427622801943@g.us",
-        "text": "={{ $json.mensagem }}",
-        "linkPreview": false,
-        "requestOptions": {}
-      },
-      "type": "@devlikeapro/n8n-nodes-waha.WAHA",
-      "typeVersion": 202502,
-      "position": [
-        704,
-        2336
-      ],
-      "id": "9f77340c-61c9-44ca-8734-5c26fbc1af24",
-      "name": "Send a text message1",
       "credentials": {
         "wahaApi": {
           "id": "SnPbBDMOKqjxdZQo",
@@ -1086,13 +850,6 @@
         ],
         [
           {
-            "node": "edit_delayed",
-            "type": "main",
-            "index": 0
-          }
-        ],
-        [
-          {
             "node": "edit_lunch_start",
             "type": "main",
             "index": 0
@@ -1101,27 +858,6 @@
         [
           {
             "node": "edit_lunch_end",
-            "type": "main",
-            "index": 0
-          }
-        ],
-        [
-          {
-            "node": "edit_lunch_pre_opened_end",
-            "type": "main",
-            "index": 0
-          }
-        ],
-        [
-          {
-            "node": "edit_lunch_alert_no_service",
-            "type": "main",
-            "index": 0
-          }
-        ],
-        [
-          {
-            "node": "edit_lunch_alert_overtime",
             "type": "main",
             "index": 0
           }
@@ -1217,11 +953,6 @@
         ]
       ]
     },
-    "edit_delayed": {
-      "main": [
-        []
-      ]
-    },
     "edit_lunch_start": {
       "main": [
         [
@@ -1266,44 +997,6 @@
         ]
       ]
     },
-    "edit_lunch_pre_opened_end": {
-      "main": [
-        [
-          {
-            "node": "Split Out",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "edit_lunch_alert_no_service": {
-      "main": [
-        [
-          {
-            "node": "Telegram1",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "edit_lunch_alert_overtime": {
-      "main": [
-        [
-          {
-            "node": "Telegram1",
-            "type": "main",
-            "index": 0
-          },
-          {
-            "node": "Send a text message1",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
     "Check phone number is registered in WhatsApp.1": {
       "main": [
         [
@@ -1324,11 +1017,6 @@
             "index": 0
           }
         ]
-      ]
-    },
-    "Send a text message1": {
-      "main": [
-        []
       ]
     }
   },

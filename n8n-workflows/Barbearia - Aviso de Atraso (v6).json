@@ -17,7 +17,7 @@
       "typeVersion": 1.2,
       "position": [
         3728,
-        -912
+        -976
       ],
       "notesInFlow": true,
       "notes": "Dispara o ciclo de verificação de atraso."
@@ -34,7 +34,7 @@
       "typeVersion": 2.5,
       "position": [
         3952,
-        -912
+        -976
       ],
       "alwaysOutputData": false,
       "notesInFlow": true,
@@ -60,7 +60,7 @@
       "typeVersion": 202502,
       "position": [
         4176,
-        -912
+        -976
       ],
       "notesInFlow": true,
       "credentials": {
@@ -88,7 +88,7 @@
       "typeVersion": 202502,
       "position": [
         4400,
-        -912
+        -880
       ],
       "notesInFlow": true,
       "credentials": {
@@ -111,8 +111,8 @@
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 2.5,
       "position": [
-        4608,
-        -912
+        4624,
+        -880
       ],
       "notesInFlow": true,
       "credentials": {
@@ -122,6 +122,31 @@
         }
       },
       "notes": "Grava cooldown de 10 min + sincroniza last_sent_eta com o site."
+    },
+    {
+      "parameters": {
+        "resource": "Chatting",
+        "operation": "Send Text",
+        "session": "=default",
+        "chatId": "=120363427622801943@g.us",
+        "text": "=⏰ *Tempo de corte ultrapassado!*\n\nO atendimento atual já passou do tempo estimado.\n\n👤 Cliente: {{ $('Verifica Atraso e Busca Fila').item.json.customer_name }}\n\n\n",
+        "linkPreview": false,
+        "requestOptions": {}
+      },
+      "type": "@devlikeapro/n8n-nodes-waha.WAHA",
+      "typeVersion": 202502,
+      "position": [
+        4400,
+        -1072
+      ],
+      "id": "1d6ad27a-872d-4b20-9364-ba1fae0c8dd3",
+      "name": "Informa barbeiro",
+      "credentials": {
+        "wahaApi": {
+          "id": "SnPbBDMOKqjxdZQo",
+          "name": "WAHA - doncabellone"
+        }
+      }
     }
   ],
   "pinData": {},
@@ -155,6 +180,11 @@
             "node": "Envia Aviso WhatsApp",
             "type": "main",
             "index": 0
+          },
+          {
+            "node": "Informa barbeiro",
+            "type": "main",
+            "index": 0
           }
         ]
       ]
@@ -176,7 +206,7 @@
     "executionOrder": "v1",
     "binaryMode": "separate"
   },
-  "versionId": "93e4465c-2066-47e0-adfa-df9ebbe265be",
+  "versionId": "818dc77c-7191-43ff-b47e-1ea02688c186",
   "meta": {
     "templateCredsSetupCompleted": true,
     "instanceId": "d4e37845a647a12b6a7a035bf7160e477fe76eaff3797bfeee3c57876702d64d"

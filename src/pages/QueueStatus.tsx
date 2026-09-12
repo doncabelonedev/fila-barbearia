@@ -26,7 +26,8 @@ export default function QueueStatus() {
   const [showLeaveConfirm, setShowLeaveConfirm] = useState(false);
   const [guestCount, setGuestCount] = useState(0);
   const [whatsappNumber, setWhatsappNumber] = useState<string | null>(null);
-  const { shopName, logoUrl, baseQueueTime, isLunchPaused, isPreOpening } = useShopSettings();
+  const { shopName, logoUrl, baseQueueTime, isLunchPaused, isPreOpening } =
+    useShopSettings();
 
   const [estimatedTimeStr, setEstimatedTimeStr] = useState("Agora");
 
@@ -248,8 +249,8 @@ export default function QueueStatus() {
                   <div>
                     <p className="font-bold text-sm">Pausa para almoço</p>
                     <p className="text-sm opacity-90 mt-1">
-                      Estamos em pausa para o almoço. Assim que retornarmos,
-                      seu horário estimado será atualizado.
+                      Estamos em pausa para o almoço. Assim que retornarmos, seu
+                      horário estimado será atualizado.
                     </p>
                   </div>
                 </div>
@@ -260,7 +261,8 @@ export default function QueueStatus() {
                   <div>
                     <p className="font-bold text-sm">Barbeiro a caminho</p>
                     <p className="text-sm opacity-90 mt-1">
-                      O horário estimado aparecerá assim que os atendimentos começarem.
+                      O horário estimado aparecerá assim que os atendimentos
+                      começarem.
                     </p>
                   </div>
                 </div>
@@ -291,28 +293,31 @@ export default function QueueStatus() {
               </div>
 
               <AnimatePresence>
-                {position !== null && position <= 3 && !isLunchPaused && !isPreOpening && (
-                  <motion.div
-                    initial={{ opacity: 0, scale: 0.9 }}
-                    animate={{ opacity: 1, scale: 1 }}
-                    exit={{ opacity: 0, scale: 0.9 }}
-                    className="flex items-start space-x-3 rounded-2xl bg-amber-900/20 p-4 text-amber-400 border border-amber-900/30"
-                  >
-                    <AlertTriangle className="h-6 w-6 shrink-0 text-amber-500" />
-                    <div>
-                      <p className="font-bold">
-                        {position <= 2 && "Você é o proximo!"}
-                        {position == 3 && "Sua vez está se aproximando!"}
-                      </p>
-                      <p className="text-sm opacity-90">
-                        {position <= 2 &&
-                          "Aguarde, o barbeiro irá chamá-lo em instantes."}
-                        {position == 3 &&
-                          "Para não perder sua vez, já venha para a barbearia."}
-                      </p>
-                    </div>
-                  </motion.div>
-                )}
+                {position !== null &&
+                  position <= 3 &&
+                  !isLunchPaused &&
+                  !isPreOpening && (
+                    <motion.div
+                      initial={{ opacity: 0, scale: 0.9 }}
+                      animate={{ opacity: 1, scale: 1 }}
+                      exit={{ opacity: 0, scale: 0.9 }}
+                      className="flex items-start space-x-3 rounded-2xl bg-amber-900/20 p-4 text-amber-400 border border-amber-900/30"
+                    >
+                      <AlertTriangle className="h-6 w-6 shrink-0 text-amber-500" />
+                      <div>
+                        <p className="font-bold">
+                          {position <= 2 && "Você é o proximo!"}
+                          {position == 3 && "Sua vez está se aproximando!"}
+                        </p>
+                        <p className="text-sm opacity-90">
+                          {position <= 2 &&
+                            "Venha imediatamente para a barbearia"}
+                          {position == 3 &&
+                            "Para não perder sua vez, já venha para a barbearia."}
+                        </p>
+                      </div>
+                    </motion.div>
+                  )}
               </AnimatePresence>
 
               <div className="space-y-4 pt-4">

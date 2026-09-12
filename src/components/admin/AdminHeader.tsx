@@ -1,4 +1,16 @@
-import { Clock, History, LogOut, Megaphone, Power, Scissors, Settings, Users, UtensilsCrossed } from "lucide-react";
+import {
+  Clock,
+  History,
+  LogOut,
+  Megaphone,
+  MoreVertical,
+  Power,
+  Scissors,
+  Settings,
+  Users,
+  UtensilsCrossed,
+} from "lucide-react";
+import { useEffect, useRef, useState } from "react";
 
 interface AdminHeaderProps {
   shopName: string;
@@ -25,6 +37,25 @@ export default function AdminHeader({
   onNavigate,
   onLogout,
 }: AdminHeaderProps) {
+  const [menuOpen, setMenuOpen] = useState(false);
+  const menuRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
+        setMenuOpen(false);
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  const navItems = [
+    { label: "Histórico", icon: History, path: "/admin/history" },
+    { label: "Clientes", icon: Users, path: "/admin/clients" },
+    { label: "Configurações", icon: Settings, path: "/admin/settings" },
+  ];
+
   return (
     <header className="sticky top-0 z-10 border-b border-neutral-800 bg-neutral-900/80 backdrop-blur-md">
       <div className="mx-auto flex max-w-4xl items-center justify-between p-4">
@@ -103,13 +134,6 @@ export default function AdminHeader({
             </span>
           </button>
           <button
-            onClick={() => onNavigate("/admin/history")}
-            className="rounded-xl p-2 text-neutral-400 hover:bg-neutral-800 transition-colors"
-            title="Histórico"
-          >
-            <History className="h-6 w-6" />
-          </button>
-          <button
             hidden
             onClick={() => onNavigate("/admin/campaigns")}
             className="rounded-xl p-2 text-neutral-400 hover:bg-neutral-800 transition-colors"
@@ -117,26 +141,66 @@ export default function AdminHeader({
           >
             <Megaphone className="h-6 w-6" />
           </button>
-          <button
-            onClick={() => onNavigate("/admin/clients")}
-            className="rounded-xl p-2 text-neutral-400 hover:bg-neutral-800 transition-colors"
-            title="Clientes"
-          >
-            <Users className="h-6 w-6" />
-          </button>
-          <button
-            onClick={() => onNavigate("/admin/settings")}
-            className="rounded-xl p-2 text-neutral-400 hover:bg-neutral-800 transition-colors"
-            title="Configurações"
-          >
-            <Settings className="h-6 w-6" />
-          </button>
-          <button
-            onClick={onLogout}
-            className="rounded-xl p-2 text-red-400 hover:bg-red-900/20 transition-colors"
-          >
-            <LogOut className="h-6 w-6" />
-          </button>
+
+          {/* Desktop: ícones inline */}
+          <div className="hidden sm:flex items-center space-x-2">
+            {navItems.map(({ label, icon: Icon, path }) => (
+              <button
+                key={path}
+                onClick={() => onNavigate(path)}
+                className="rounded-xl p-2 text-neutral-400 hover:bg-neutral-800 transition-colors"
+                title={label}
+              >
+                <Icon className="h-6 w-6" />
+              </button>
+            ))}
+            <button
+              onClick={onLogout}
+              className="rounded-xl p-2 text-red-400 hover:bg-red-900/20 transition-colors"
+              title="Sair"
+            >
+              <LogOut className="h-6 w-6" />
+            </button>
+          </div>
+
+          {/* Mobile: dropdown */}
+          <div className="relative sm:hidden" ref={menuRef}>
+            <button
+              onClick={() => setMenuOpen((open) => !open)}
+              className="rounded-xl p-2 text-neutral-400 hover:bg-neutral-800 transition-colors"
+              title="Mais opções"
+            >
+              <MoreVertical className="h-6 w-6" />
+            </button>
+            {menuOpen && (
+              <div className="absolute right-0 top-full mt-2 w-48 overflow-hidden rounded-xl border border-neutral-800 bg-neutral-900 py-1 shadow-lg z-20">
+                {navItems.map(({ label, icon: Icon, path }) => (
+                  <button
+                    key={path}
+                    onClick={() => {
+                      onNavigate(path);
+                      setMenuOpen(false);
+                    }}
+                    className="flex w-full items-center gap-2 px-4 py-2.5 text-sm text-neutral-300 hover:bg-neutral-800"
+                  >
+                    <Icon className="h-4 w-4" />
+                    {label}
+                  </button>
+                ))}
+                <div className="my-1 border-t border-neutral-800" />
+                <button
+                  onClick={() => {
+                    onLogout();
+                    setMenuOpen(false);
+                  }}
+                  className="flex w-full items-center gap-2 px-4 py-2.5 text-sm text-red-400 hover:bg-red-900/20"
+                >
+                  <LogOut className="h-4 w-4" />
+                  Sair
+                </button>
+              </div>
+            )}
+          </div>
         </div>
       </div>
     </header>

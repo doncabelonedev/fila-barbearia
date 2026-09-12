@@ -194,7 +194,12 @@ class WebhookService {
     webhookUrl: string | null,
     trackingUrlBase: string | null,
   ): Promise<boolean> {
-    if (!webhookUrl) return false;
+    if (!webhookUrl) {
+      console.error(
+        `Webhook não enviado para ${item.id} - ${event}: webhook_url não configurado.`,
+      );
+      return false;
+    }
 
     try {
       let phone = item.customer?.phone?.replace(/\D/g, "") || "";

@@ -18,6 +18,7 @@ interface ShopSettingsContextType {
   baseQueueTime: number | null;
   isLunchPaused: boolean;
   isPreOpening: boolean;
+  loading: boolean;
   setTheme: (theme: "light" | "dark") => void;
 }
 
@@ -60,6 +61,7 @@ export function useShopSettingsHook() {
     baseQueueTime: null as number | null,
     isLunchPaused: false,
     isPreOpening: false,
+    loading: true,
   });
 
   const setTheme = (theme: "light" | "dark") => {
@@ -96,7 +98,10 @@ export function useShopSettingsHook() {
           baseQueueTime: data.base_queue_time,
           isLunchPaused: data.is_lunch_paused ?? false,
           isPreOpening: data.is_pre_opening ?? false,
+          loading: false,
         });
+      } else {
+        setSettings((prev) => ({ ...prev, loading: false }));
       }
     }
 
@@ -128,6 +133,7 @@ export function useShopSettingsHook() {
               baseQueueTime: payload.new.base_queue_time,
               isLunchPaused: payload.new.is_lunch_paused ?? false,
               isPreOpening: payload.new.is_pre_opening ?? false,
+              loading: false,
             });
           }
         },
@@ -179,6 +185,7 @@ export function useShopSettings() {
       baseQueueTime: null as number | null,
       isLunchPaused: false,
       isPreOpening: false,
+      loading: false,
       setTheme: () => {},
     };
   }

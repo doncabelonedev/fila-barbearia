@@ -93,6 +93,7 @@ export default function Home() {
     baseQueueTime,
     isLunchPaused,
     isPreOpening,
+    loading: settingsLoading,
   } = useShopSettings();
 
   useEffect(() => {
@@ -286,20 +287,24 @@ export default function Home() {
       localStorage.setItem("barber_customer_phone", fullPhone);
       localStorage.setItem("barber_customer_name", name);
 
-      webhookService.sendWebhook(
-        isLunchPaused
-          ? "JOINED_IN_LUNCH"
-          : isPreOpening
-            ? "JOINED_IN_PRE_OPENING"
-            : "JOINED",
-        queueEntry,
-        queueCount + 1,
-        queueCount,
-        mainDuration,
-        shopName,
-        webhookUrl,
-        trackingUrlBase,
-      );
+      webhookService
+        .sendWebhook(
+          isLunchPaused
+            ? "JOINED_IN_LUNCH"
+            : isPreOpening
+              ? "JOINED_IN_PRE_OPENING"
+              : "JOINED",
+          queueEntry,
+          queueCount + 1,
+          queueCount,
+          mainDuration,
+          shopName,
+          webhookUrl,
+          trackingUrlBase,
+        )
+        .then((sent) => {
+          if (!sent) console.error(`Webhook JOINED falhou para ${queueEntry.id}`);
+        });
 
       toast.success("Entrou na fila com sucesso!");
       navigate("/queue");
@@ -366,7 +371,7 @@ export default function Home() {
     return { timeStr, durationStr };
   })();
 
-  if (statusLoading) {
+  if (statusLoading || settingsLoading) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-neutral-950">
         <Loader2 className="h-8 w-8 animate-spin text-emerald-600" />

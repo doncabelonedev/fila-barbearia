@@ -58,6 +58,7 @@ export default function AddCustomerForm({
     baseQueueTime,
     isLunchPaused,
     isPreOpening,
+    loading: settingsLoading,
   } = useShopSettings();
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -79,6 +80,10 @@ export default function AddCustomerForm({
   };
 
   const handleConfirm = async () => {
+    if (settingsLoading) {
+      toast.error("Configurações ainda carregando, tente novamente.");
+      return;
+    }
     setLoading(true);
     try {
       const hasPhone = phone.trim() !== "";
@@ -148,20 +153,24 @@ export default function AddCustomerForm({
 
       const currentBaseTime = baseQueueTime == null ? 30 : baseQueueTime;
       if (!cleanPhone.startsWith("manual_")) {
-        webhookService.sendWebhook(
-          isLunchPaused
-            ? "JOINED_IN_LUNCH"
-            : isPreOpening
-              ? "JOINED_IN_PRE_OPENING"
-              : "JOINED",
-          queueEntry,
-          queueCount + 1,
-          queueCount,
-          currentBaseTime,
-          shopName,
-          webhookUrl,
-          trackingUrlBase,
-        );
+        webhookService
+          .sendWebhook(
+            isLunchPaused
+              ? "JOINED_IN_LUNCH"
+              : isPreOpening
+                ? "JOINED_IN_PRE_OPENING"
+                : "JOINED",
+            queueEntry,
+            queueCount + 1,
+            queueCount,
+            currentBaseTime,
+            shopName,
+            webhookUrl,
+            trackingUrlBase,
+          )
+          .then((sent) => {
+            if (!sent) console.error(`Webhook JOINED falhou para ${queueEntry.id}`);
+          });
       }
 
       toast.success("Adicionado à fila");

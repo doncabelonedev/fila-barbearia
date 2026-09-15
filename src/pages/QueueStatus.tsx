@@ -25,9 +25,14 @@ export default function QueueStatus() {
   const [loading, setLoading] = useState(true);
   const [showLeaveConfirm, setShowLeaveConfirm] = useState(false);
   const [guestCount, setGuestCount] = useState(0);
-  const [whatsappNumber, setWhatsappNumber] = useState<string | null>(null);
-  const { shopName, logoUrl, baseQueueTime, isLunchPaused, isPreOpening } =
-    useShopSettings();
+  const {
+    shopName,
+    logoUrl,
+    baseQueueTime,
+    isLunchPaused,
+    isPreOpening,
+    whatsappNumber,
+  } = useShopSettings();
 
   const [estimatedTimeStr, setEstimatedTimeStr] = useState("Agora");
 
@@ -101,7 +106,6 @@ export default function QueueStatus() {
       const pos = await calculatePosition(data.position);
       const eta = await calculateEstimatedServiceTimeDynamic(pos);
       if (mounted) setEstimatedTimeStr(eta);
-      fetchSettings();
       fetchGuestCount(data.id);
       setLoading(false);
     }
@@ -113,17 +117,6 @@ export default function QueueStatus() {
         .eq("parent_queue_id", queueId)
         .in("status", ["waiting", "serving"]);
       setGuestCount(count || 0);
-    }
-
-    async function fetchSettings() {
-      const { data } = await supabase
-        .from("shop_settings")
-        .select("whatsapp_number")
-        .limit(1)
-        .maybeSingle();
-      if (data?.whatsapp_number) {
-        setWhatsappNumber(data.whatsapp_number);
-      }
     }
 
     async function calculatePosition(currentPosition: number): Promise<number> {

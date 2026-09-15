@@ -18,6 +18,7 @@ interface ShopSettingsContextType {
   baseQueueTime: number | null;
   isLunchPaused: boolean;
   isPreOpening: boolean;
+  whatsappNumber: string | null;
   loading: boolean;
   setTheme: (theme: "light" | "dark") => void;
 }
@@ -61,6 +62,7 @@ export function useShopSettingsHook() {
     baseQueueTime: null as number | null,
     isLunchPaused: false,
     isPreOpening: false,
+    whatsappNumber: null as string | null,
     loading: true,
   });
 
@@ -74,7 +76,7 @@ export function useShopSettingsHook() {
       const { data } = await supabase
         .from("shop_settings")
         .select(
-          "theme, shop_name, logo_url, webhook_url, campaign_webhook_url, tracking_url_base, base_queue_time, is_lunch_paused, is_pre_opening",
+          "theme, shop_name, logo_url, whatsapp_number, webhook_url, campaign_webhook_url, tracking_url_base, base_queue_time, is_lunch_paused, is_pre_opening",
         )
         .limit(1)
         .maybeSingle();
@@ -98,6 +100,7 @@ export function useShopSettingsHook() {
           baseQueueTime: data.base_queue_time,
           isLunchPaused: data.is_lunch_paused ?? false,
           isPreOpening: data.is_pre_opening ?? false,
+          whatsappNumber: data.whatsapp_number,
           loading: false,
         });
       } else {
@@ -133,6 +136,7 @@ export function useShopSettingsHook() {
               baseQueueTime: payload.new.base_queue_time,
               isLunchPaused: payload.new.is_lunch_paused ?? false,
               isPreOpening: payload.new.is_pre_opening ?? false,
+              whatsappNumber: payload.new.whatsapp_number,
               loading: false,
             });
           }
@@ -142,7 +146,7 @@ export function useShopSettingsHook() {
 
     const pollInterval = setInterval(() => {
       fetchSettings();
-    }, 10000); // Poll settings less frequently (10s)
+    }, 60000); // Poll settings less frequently (60s)
 
     return () => {
       supabase.removeChannel(channel);
@@ -185,6 +189,7 @@ export function useShopSettings() {
       baseQueueTime: null as number | null,
       isLunchPaused: false,
       isPreOpening: false,
+      whatsappNumber: null as string | null,
       loading: false,
       setTheme: () => {},
     };

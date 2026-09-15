@@ -347,7 +347,7 @@ export function useQueueCount() {
 
     const pollInterval = setInterval(() => {
       fetchCount();
-    }, 5000);
+    }, 45000); // fallback de seguranca; realtime ja cobre atualizacao em tempo real
 
     return () => {
       supabase.removeChannel(channel);

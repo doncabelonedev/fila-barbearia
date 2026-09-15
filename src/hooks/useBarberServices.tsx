@@ -43,7 +43,7 @@ export function useBarberServicesHook() {
 
     const pollInterval = setInterval(() => {
       fetchServices();
-    }, 10000);
+    }, 60000); // fallback; alteracoes de servico sao raras e cobertas por realtime
 
     return () => {
       supabase.removeChannel(channel);

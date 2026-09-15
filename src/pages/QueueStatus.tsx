@@ -8,7 +8,7 @@ import {
   UtensilsCrossed,
 } from "lucide-react";
 import { AnimatePresence, motion } from "motion/react";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import toast from "react-hot-toast";
 import { useNavigate } from "react-router-dom";
 import { calculateEstimatedServiceTimeDynamic } from "../hooks/useQueue";
@@ -35,23 +35,28 @@ export default function QueueStatus() {
   } = useShopSettings();
 
   const [estimatedTimeStr, setEstimatedTimeStr] = useState("Agora");
+  const positionRef = useRef(position);
+
+  useEffect(() => {
+    positionRef.current = position;
+  }, [position]);
 
   useEffect(() => {
     let mounted = true;
 
     async function calc() {
-      const peopleAhead = position ? position - 1 : 0;
+      const peopleAhead = positionRef.current ? positionRef.current - 1 : 0;
       const eta = await calculateEstimatedServiceTimeDynamic(peopleAhead + 1);
       if (mounted) setEstimatedTimeStr(eta);
     }
 
     calc();
-    const interval = setInterval(calc, 30000);
+    const interval = setInterval(calc, 30000); // cadencia estavel, nao recria a cada mudanca de position
     return () => {
       mounted = false;
       clearInterval(interval);
     };
-  }, [position, isLunchPaused, isPreOpening]);
+  }, [isLunchPaused, isPreOpening]); // position removido de proposito
 
   useEffect(() => {
     let mounted = true;
@@ -142,7 +147,7 @@ export default function QueueStatus() {
 
     const pollInterval = setInterval(() => {
       fetchStatus();
-    }, 5000);
+    }, 20000); // fallback; realtime (queue_updates) + visibilitychange cobrem o caso comum
 
     const handleVisibilityChange = () => {
       if (document.visibilityState === "visible" && !isCurrentlyServing) {

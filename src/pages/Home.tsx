@@ -11,7 +11,7 @@ import {
   X,
 } from "lucide-react";
 import { motion } from "motion/react";
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import toast from "react-hot-toast";
 import { useNavigate } from "react-router-dom";
 import {
@@ -320,6 +320,11 @@ export default function Home() {
   };
 
   const [estimatedTimeStr, setEstimatedTimeStr] = useState("Agora");
+  const queueCountRef = useRef(queueCount);
+
+  useEffect(() => {
+    queueCountRef.current = queueCount;
+  }, [queueCount]);
 
   useEffect(() => {
     if (isPreOpening || isLunchPaused) {
@@ -328,16 +333,16 @@ export default function Home() {
     }
     let mounted = true;
     async function calc() {
-      const eta = await calculateEstimatedServiceTimeDynamic(queueCount + 1);
+      const eta = await calculateEstimatedServiceTimeDynamic(queueCountRef.current + 1);
       if (mounted) setEstimatedTimeStr(eta);
     }
     calc();
-    const interval = setInterval(calc, 20000);
+    const interval = setInterval(calc, 20000); // cadencia estavel, nao recria a cada mudanca de queueCount
     return () => {
       mounted = false;
       clearInterval(interval);
     };
-  }, [queueCount, isLunchPaused, isPreOpening]);
+  }, [isLunchPaused, isPreOpening]); // queueCount removido de proposito
   const isQueueFull = (() => {
     if (!closeTime) return false;
     const closeMinutes = timeToMinutes(closeTime);

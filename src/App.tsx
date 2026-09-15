@@ -21,6 +21,30 @@ import { Toaster } from "react-hot-toast";
 import { ShopSettingsProvider } from "./hooks/useShopSettings";
 import { BarberServicesProvider } from "./hooks/useBarberServices";
 
+function AppContent() {
+  return (
+    <Router>
+      <BarberServicesProvider>
+        <SessionManager>
+          <div className="min-h-screen font-sans transition-colors duration-300 bg-neutral-950 text-neutral-50">
+            <Routes>
+              <Route path="/" element={<Home />} />
+              <Route path="/queue" element={<QueueStatus />} />
+              <Route path="/in-service" element={<InService />} />
+              <Route path="/admin" element={<AdminDashboard />} />
+              <Route path="/admin/settings" element={<AdminSettings />} />
+              <Route path="/admin/history" element={<AdminHistory />} />
+              <Route path="/admin/campaigns" element={<AdminCampaigns />} />
+              <Route path="/admin/clients" element={<AdminClients />} />
+              <Route path="*" element={<Navigate to="/" replace />} />
+            </Routes>
+          </div>
+        </SessionManager>
+      </BarberServicesProvider>
+    </Router>
+  );
+}
+
 // Componente para gerenciar a sessão global e redirecionamentos automáticos
 function SessionManager({ children }: { children: React.ReactNode }) {
   const navigate = useNavigate();
@@ -88,36 +112,12 @@ function SessionManager({ children }: { children: React.ReactNode }) {
   return <>{children}</>;
 }
 
-function AppContent() {
-  return (
-    <Router>
-      <SessionManager>
-        <div className="min-h-screen font-sans transition-colors duration-300 bg-neutral-950 text-neutral-50">
-          <Routes>
-            <Route path="/" element={<Home />} />
-            <Route path="/queue" element={<QueueStatus />} />
-            <Route path="/in-service" element={<InService />} />
-            <Route path="/admin" element={<AdminDashboard />} />
-            <Route path="/admin/settings" element={<AdminSettings />} />
-            <Route path="/admin/history" element={<AdminHistory />} />
-            <Route path="/admin/campaigns" element={<AdminCampaigns />} />
-            <Route path="/admin/clients" element={<AdminClients />} />
-            <Route path="*" element={<Navigate to="/" replace />} />
-          </Routes>
-        </div>
-      </SessionManager>
-    </Router>
-  );
-}
-
 export default function App() {
   return (
     <>
       <Toaster position="top-center" />
       <ShopSettingsProvider>
-        <BarberServicesProvider>
-          <AppContent />
-        </BarberServicesProvider>
+        <AppContent />
       </ShopSettingsProvider>
     </>
   );

@@ -144,13 +144,8 @@ export function useShopSettingsHook() {
       )
       .subscribe();
 
-    const pollInterval = setInterval(() => {
-      fetchSettings();
-    }, 60000); // Poll settings less frequently (60s)
-
     return () => {
       supabase.removeChannel(channel);
-      clearInterval(pollInterval);
     };
   }, []);
 

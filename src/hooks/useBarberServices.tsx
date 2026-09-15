@@ -1,4 +1,5 @@
 import React, { createContext, useContext, ReactNode, useState, useEffect } from "react";
+import { useLocation } from "react-router-dom";
 import { supabase, BarberService } from "../lib/supabase";
 
 interface BarberServicesContextType {
@@ -12,10 +13,19 @@ const BarberServicesContext = createContext<
 >(undefined);
 
 export function useBarberServicesHook() {
+  const location = useLocation();
   const [services, setServices] = useState<BarberService[]>([]);
   const [loading, setLoading] = useState(true);
 
+  const enabled =
+    location.pathname === "/" || location.pathname.startsWith("/admin");
+
   useEffect(() => {
+    if (!enabled) {
+      setLoading(false);
+      return;
+    }
+
     async function fetchServices() {
       const { data } = await supabase
         .from("barber_services")
@@ -41,15 +51,10 @@ export function useBarberServicesHook() {
       )
       .subscribe();
 
-    const pollInterval = setInterval(() => {
-      fetchServices();
-    }, 60000); // fallback; alteracoes de servico sao raras e cobertas por realtime
-
     return () => {
       supabase.removeChannel(channel);
-      clearInterval(pollInterval);
     };
-  }, []);
+  }, [enabled]);
 
   const activeServices = services.filter((s) => s.is_active);
 

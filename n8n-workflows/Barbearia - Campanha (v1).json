@@ -1,5 +1,4 @@
 {
-  "name": "Barbearia - Campanha",
   "nodes": [
     {
       "parameters": {
@@ -11,11 +10,8 @@
       },
       "type": "n8n-nodes-base.webhook",
       "typeVersion": 2.1,
-      "position": [
-        -1600,
-        800
-      ],
-      "id": "283417fb-863b-4d91-aaca-e4e6a0cdc4a4",
+      "position": [-1936, 960],
+      "id": "95ff1a35-7900-4fdb-af5a-3586c5bba167",
       "name": "Webhook",
       "webhookId": "c8a11ae2-be45-4e05-a248-839e55e31775"
     },
@@ -25,21 +21,9 @@
           "assignments": [
             {
               "id": "4723974b-486e-47d5-ba59-522ff3229966",
-              "name": "titulo_campanha",
-              "value": "={{ $json.body.titulo_campanha }}",
+              "name": "campaign_id",
+              "value": "={{ $json.body.campaign_id }}",
               "type": "string"
-            },
-            {
-              "id": "94da2511-283e-4e03-9e1e-429d0b29149a",
-              "name": "mensagem_texto",
-              "value": "={{ $json.body.mensagem_texto }}",
-              "type": "string"
-            },
-            {
-              "id": "138f8258-19c8-40c9-8714-cd6ebc4aa47c",
-              "name": "destinatarios",
-              "value": "={{ $json.body.destinatarios }}",
-              "type": "array"
             }
           ]
         },
@@ -47,52 +31,95 @@
       },
       "type": "n8n-nodes-base.set",
       "typeVersion": 3.4,
-      "position": [
-        -1360,
-        800
-      ],
-      "id": "7e771b5a-6922-448d-8ce7-e7f847ff3c66",
+      "position": [-1712, 960],
+      "id": "3104879b-1db6-4995-8a6a-15ce218311ee",
       "name": "Extrair Dados"
     },
     {
       "parameters": {
-        "jsCode": "// WhatsApp usa *negrito* (asterisco simples) e _itálico_, mas o admin digita\n// no padrão Markdown (**negrito**, *itálico*). Converte antes de enviar,\n// senão o cliente recebe os asteriscos literais no WhatsApp.\nconst raw = String($input.first().json.mensagem_texto || '');\nconst BOLD_MARK = '\\u0000';\n\nlet formatted = raw.replace(/\\*\\*(.+?)\\*\\*/g, (_, t) => `${BOLD_MARK}${t}${BOLD_MARK}`);\nformatted = formatted.replace(/\\*(.+?)\\*/g, '_$1_');\nformatted = formatted.split(BOLD_MARK).join('*');\n\nreturn [{\n  json: {\n    ...$input.first().json,\n    mensagem_formatada: formatted\n  }\n}];"
+        "operation": "get",
+        "tableId": "campaigns",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "id",
+              "keyValue": "={{ $('Extrair Dados').item.json.campaign_id }}"
+            }
+          ]
+        }
       },
-      "type": "n8n-nodes-base.code",
-      "typeVersion": 2,
-      "position": [
-        -1120,
-        800
-      ],
-      "id": "048a65cd-caab-4192-82e9-e88faa6a9b71",
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [-1488, 960],
+      "id": "17291ea1-264a-4094-8830-6f10cf734a63",
+      "name": "Buscar Campanha",
+      "credentials": {
+        "supabaseApi": {
+          "id": "ID0NRdJJfwn7PsJ0",
+          "name": "doncabellone des - conta olaszlucas"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "1a2b3c4d-5e6f-4789-9abc-def012345678",
+              "name": "mensagem_formatada",
+              "value": "={{ (() => {\n  // WhatsApp usa *negrito* (asterisco simples) e _itálico_, mas o admin digita\n  // no padrão Markdown (**negrito**, *itálico*). Converte antes de enviar,\n  // senão o cliente recebe os asteriscos literais no WhatsApp.\n  const raw = String($('Buscar Campanha').item.json.message || '');\n  const BOLD_MARK = '\\u0000';\n  let formatted = raw.replace(/\\*\\*(.+?)\\*\\*/g, (_, t) => BOLD_MARK + t + BOLD_MARK);\n  formatted = formatted.replace(/\\*(.+?)\\*/g, '_$1_');\n  formatted = formatted.split(BOLD_MARK).join('*');\n  return formatted;\n})() }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [-1264, 960],
+      "id": "7d57ae8f-5518-41bc-9eab-f3072a0a78dc",
       "name": "Formatar Mensagem WhatsApp"
     },
     {
       "parameters": {
-        "fieldToSplitOut": "destinatarios",
-        "options": {}
+        "operation": "getAll",
+        "tableId": "campaign_recipients",
+        "returnAll": true,
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "campaign_id",
+              "condition": "eq",
+              "keyValue": "={{ $('Extrair Dados').item.json.campaign_id }}"
+            },
+            {
+              "keyName": "status",
+              "condition": "eq",
+              "keyValue": "pending"
+            }
+          ]
+        }
       },
-      "type": "n8n-nodes-base.splitOut",
+      "type": "n8n-nodes-base.supabase",
       "typeVersion": 1,
-      "position": [
-        -880,
-        800
-      ],
-      "id": "244f49b7-cc63-4aa0-a059-191ddb0b3df0",
-      "name": "Split Out"
+      "position": [-1040, 960],
+      "id": "6a8baddf-bb12-4ca7-8559-1b70f2071470",
+      "name": "Buscar Destinatários Pendentes",
+      "credentials": {
+        "supabaseApi": {
+          "id": "ID0NRdJJfwn7PsJ0",
+          "name": "doncabellone des - conta olaszlucas"
+        }
+      }
     },
     {
       "parameters": {
-        "batchSize": 1,
         "options": {}
       },
       "type": "n8n-nodes-base.splitInBatches",
       "typeVersion": 3,
-      "position": [
-        -640,
-        800
-      ],
-      "id": "da4aa67d-e0a3-4768-8192-043601c736df",
+      "position": [-816, 960],
+      "id": "3cdaa350-34d9-4462-b018-013a93b731bc",
       "name": "Loop Over Items"
     },
     {
@@ -100,23 +127,24 @@
         "resource": "Contacts",
         "operation": "Check Exists",
         "session": "=default",
-        "phone": "={{ $json.numero }}",
+        "phone": "={{ $('Loop Over Items').item.json.numero }}",
         "requestOptions": {}
       },
       "type": "@devlikeapro/n8n-nodes-waha.WAHA",
       "typeVersion": 202502,
-      "position": [
-        -400,
-        960
-      ],
-      "id": "993da514-e1cd-4922-a98c-a8f71550d671",
+      "position": [-464, 976],
+      "id": "866c0eab-c29c-48b9-816a-270498a8eed1",
       "name": "Verificar Número",
+      "retryOnFail": true,
+      "maxTries": 2,
+      "waitBetweenTries": 4000,
       "credentials": {
         "wahaApi": {
           "id": "SnPbBDMOKqjxdZQo",
           "name": "WAHA - doncabellone"
         }
-      }
+      },
+      "onError": "continueErrorOutput"
     },
     {
       "parameters": {
@@ -124,7 +152,7 @@
           "options": {
             "caseSensitive": true,
             "leftValue": "",
-            "typeValidation": "strict",
+            "typeValidation": "loose",
             "version": 3
           },
           "conditions": [
@@ -145,11 +173,8 @@
       },
       "type": "n8n-nodes-base.if",
       "typeVersion": 2.3,
-      "position": [
-        -160,
-        960
-      ],
-      "id": "0b7af641-f7fb-4829-a03f-1259a28c5856",
+      "position": [112, 960],
+      "id": "7c02a8b7-815a-4507-ab4e-e072b5bfe311",
       "name": "Número existe?"
     },
     {
@@ -162,27 +187,27 @@
       },
       "type": "@devlikeapro/n8n-nodes-waha.WAHA",
       "typeVersion": 202502,
-      "position": [
-        80,
-        880
-      ],
-      "id": "50a3956a-f822-4fc4-8008-c27c9e29c6c6",
-      "name": "Start Typing"
+      "position": [624, 944],
+      "id": "e523becd-8b18-4f48-b0a7-3c7547637d8b",
+      "name": "Start Typing",
+      "credentials": {
+        "wahaApi": {
+          "id": "SnPbBDMOKqjxdZQo",
+          "name": "WAHA - doncabellone"
+        }
+      }
     },
     {
       "parameters": {
-        "amount": "={{ Math.floor(Math.random() * 3) + 3 }}"
+        "amount": "={{ (() => {\n  const total = $('Buscar Destinatários Pendentes').all().length;\n  const blocoTamanho = total <= 20 ? 0 : total <= 100 ? 20 : total <= 300 ? 30 : 50;\n  const isLongBreak = blocoTamanho > 0 && $runIndex > 0 && $runIndex % blocoTamanho === (blocoTamanho - 1);\n  const base = isLongBreak ? Math.floor(Math.random() * 60) + 45 : Math.floor(Math.random() * 12) + 6;\n  const msgLen = ($('Formatar Mensagem WhatsApp').item.json.mensagem_formatada || '').length;\n  const typingBonus = Math.min(6, Math.round(msgLen / 40));\n  return base + typingBonus;\n})() }}"
       },
       "type": "n8n-nodes-base.wait",
       "typeVersion": 1.1,
-      "position": [
-        320,
-        880
-      ],
-      "id": "9852eb70-2a72-4e82-8588-ceb469e5bc38",
+      "position": [848, 944],
+      "id": "9e63e4db-49ef-484f-aa5d-f1439d5b46fd",
       "name": "Wait",
       "webhookId": "474cfc48-5886-4a7a-aace-ea704f8d2f27",
-      "notes": "tempo aleatório entre 3 e 5 segundos, pra evitar bloqueio do WhatsApp em disparo em massa"
+      "notes": "Delay natural: 6-17s normal + variação pelo tamanho da mensagem, com pausa longa (45-104s) a cada N mensagens (N calculado pela quantidade total de destinatários pendentes: <=20 sem pausa longa, <=100 blocos de 20, <=300 blocos de 30, acima disso blocos de 50). Evita padrão robótico de intervalo fixo."
     },
     {
       "parameters": {
@@ -190,22 +215,167 @@
         "operation": "Send Text",
         "session": "=default",
         "chatId": "={{ $('Verificar Número').item.json.chatId }}",
-        "text": "={{ $('Formatar Mensagem WhatsApp').item.json.mensagem_formatada }}",
+        "text": "=Olá {{ $('Loop Over Items').item.json.nome }}, {{ $('Formatar Mensagem WhatsApp').item.json.mensagem_formatada }}",
         "linkPreview": false,
         "requestOptions": {}
       },
       "type": "@devlikeapro/n8n-nodes-waha.WAHA",
       "typeVersion": 202502,
-      "position": [
-        560,
-        880
-      ],
-      "id": "81c58ad7-b9cb-42fb-997a-f0ec6ad6b127",
+      "position": [1072, 944],
+      "id": "8241f98d-0334-4d5f-86b3-4cd1642a8fbc",
       "name": "Enviar Mensagem",
+      "retryOnFail": true,
+      "maxTries": 2,
+      "waitBetweenTries": 4000,
       "credentials": {
         "wahaApi": {
           "id": "SnPbBDMOKqjxdZQo",
           "name": "WAHA - doncabellone"
+        }
+      },
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "tableId": "campaign_recipients",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "id",
+              "condition": "eq",
+              "keyValue": "={{ $('Loop Over Items').item.json.id }}"
+            }
+          ]
+        },
+        "fieldsUi": {
+          "fieldValues": [
+            {
+              "fieldId": "status",
+              "fieldValue": "sent"
+            },
+            {
+              "fieldId": "sent_at",
+              "fieldValue": "={{ $now.toISO() }}"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [1296, 928],
+      "id": "c6e52898-cafa-404a-86b9-a33cf75efdf0",
+      "name": "Marcar Enviado",
+      "credentials": {
+        "supabaseApi": {
+          "id": "ID0NRdJJfwn7PsJ0",
+          "name": "doncabellone des - conta olaszlucas"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "tableId": "campaign_recipients",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "id",
+              "condition": "eq",
+              "keyValue": "={{ $('Loop Over Items').item.json.id }}"
+            }
+          ]
+        },
+        "fieldsUi": {
+          "fieldValues": [
+            {
+              "fieldId": "status",
+              "fieldValue": "error"
+            },
+            {
+              "fieldId": "error_message",
+              "fieldValue": "={{ (() => {\n  const e = $json.error;\n  if (!e) return 'Erro desconhecido';\n  if (typeof e === 'string') return e;\n  return e.message || JSON.stringify(e);\n})() }}"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [1072, 1264],
+      "id": "11a4d31d-7788-4a8b-ae39-4b3296887f14",
+      "name": "Marcar Erro",
+      "credentials": {
+        "supabaseApi": {
+          "id": "ID0NRdJJfwn7PsJ0",
+          "name": "doncabellone des - conta olaszlucas"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "tableId": "campaign_recipients",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "id",
+              "condition": "eq",
+              "keyValue": "={{ $('Loop Over Items').item.json.id }}"
+            }
+          ]
+        },
+        "fieldsUi": {
+          "fieldValues": [
+            {
+              "fieldId": "status",
+              "fieldValue": "invalid_number"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [112, 1152],
+      "id": "eb8f029d-2096-4be7-b48f-22cb301ceae7",
+      "name": "Marcar Inválido",
+      "credentials": {
+        "supabaseApi": {
+          "id": "ID0NRdJJfwn7PsJ0",
+          "name": "doncabellone des - conta olaszlucas"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "tableId": "campaigns",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "id",
+              "condition": "eq",
+              "keyValue": "={{ $('Extrair Dados').item.json.campaign_id }}"
+            }
+          ]
+        },
+        "fieldsUi": {
+          "fieldValues": [
+            {
+              "fieldId": "send_status",
+              "fieldValue": "completed"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [-464, 688],
+      "id": "28acc8f4-e029-44c2-bb2e-a33b0534e269",
+      "name": "Marcar Campanha Concluída",
+      "credentials": {
+        "supabaseApi": {
+          "id": "ID0NRdJJfwn7PsJ0",
+          "name": "doncabellone des - conta olaszlucas"
         }
       }
     }
@@ -226,6 +396,17 @@
       "main": [
         [
           {
+            "node": "Buscar Campanha",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Buscar Campanha": {
+      "main": [
+        [
+          {
             "node": "Formatar Mensagem WhatsApp",
             "type": "main",
             "index": 0
@@ -237,14 +418,14 @@
       "main": [
         [
           {
-            "node": "Split Out",
+            "node": "Buscar Destinatários Pendentes",
             "type": "main",
             "index": 0
           }
         ]
       ]
     },
-    "Split Out": {
+    "Buscar Destinatários Pendentes": {
       "main": [
         [
           {
@@ -257,7 +438,13 @@
     },
     "Loop Over Items": {
       "main": [
-        [],
+        [
+          {
+            "node": "Marcar Campanha Concluída",
+            "type": "main",
+            "index": 0
+          }
+        ],
         [
           {
             "node": "Verificar Número",
@@ -275,6 +462,13 @@
             "type": "main",
             "index": 0
           }
+        ],
+        [
+          {
+            "node": "Marcar Erro",
+            "type": "main",
+            "index": 0
+          }
         ]
       ]
     },
@@ -289,7 +483,7 @@
         ],
         [
           {
-            "node": "Loop Over Items",
+            "node": "Marcar Inválido",
             "type": "main",
             "index": 0
           }
@@ -322,6 +516,46 @@
       "main": [
         [
           {
+            "node": "Marcar Enviado",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Marcar Erro",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Marcar Enviado": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Items",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Marcar Erro": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Items",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Marcar Inválido": {
+      "main": [
+        [
+          {
             "node": "Loop Over Items",
             "type": "main",
             "index": 0
@@ -330,13 +564,9 @@
       ]
     }
   },
-  "active": false,
-  "settings": {
-    "executionOrder": "v1",
-    "binaryMode": "separate"
-  },
+  "pinData": {},
   "meta": {
+    "templateCredsSetupCompleted": true,
     "instanceId": "d4e37845a647a12b6a7a035bf7160e477fe76eaff3797bfeee3c57876702d64d"
-  },
-  "tags": []
+  }
 }

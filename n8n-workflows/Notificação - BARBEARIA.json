@@ -1,5 +1,4 @@
 {
-  "name": "Notificação - BARBEARIA",
   "nodes": [
     {
       "parameters": {
@@ -28,11 +27,8 @@
       },
       "type": "n8n-nodes-base.if",
       "typeVersion": 2.3,
-      "position": [
-        1616,
-        1056
-      ],
-      "id": "327a5eb9-5c59-4d82-8173-da51a26b116d",
+      "position": [-1968, 1312],
+      "id": "760452af-9506-4e97-820a-d6c47a6c1dd3",
       "name": "If"
     },
     {
@@ -45,11 +41,8 @@
       },
       "type": "n8n-nodes-base.webhook",
       "typeVersion": 2.1,
-      "position": [
-        -1536,
-        960
-      ],
-      "id": "266efce3-c6da-42d8-9884-4dfde6abb6bb",
+      "position": [-4400, 1200],
+      "id": "a707d3be-ca13-4ee1-9596-6c45172f6f64",
       "name": "Webhook",
       "webhookId": "ca062df5-3fa1-47d7-95dc-c574eb858cea"
     },
@@ -262,11 +255,8 @@
       },
       "type": "n8n-nodes-base.switch",
       "typeVersion": 3.4,
-      "position": [
-        -1088,
-        848
-      ],
-      "id": "2af1537a-b242-4dff-9442-2d15264b3a8b",
+      "position": [-3952, 1104],
+      "id": "ed7cc251-8d15-445c-a931-ad718369fc8e",
       "name": "Switch"
     },
     {
@@ -321,11 +311,8 @@
       },
       "type": "n8n-nodes-base.set",
       "typeVersion": 3.4,
-      "position": [
-        -1312,
-        960
-      ],
-      "id": "eedc33f1-b68a-4c0d-9b6d-f0670c8032c1",
+      "position": [-4176, 1200],
+      "id": "2b181c58-3842-44d2-b641-5b357368cfcd",
       "name": "Edit Fields1"
     },
     {
@@ -344,11 +331,8 @@
       },
       "type": "n8n-nodes-base.set",
       "typeVersion": 3.4,
-      "position": [
-        224,
-        480
-      ],
-      "id": "3317d353-f092-4103-93fb-b5e792eb6af9",
+      "position": [-2640, 832],
+      "id": "92b4369f-75bf-4993-9658-9bf7d6f651dc",
       "name": "edit_joined"
     },
     {
@@ -367,11 +351,8 @@
       },
       "type": "n8n-nodes-base.set",
       "typeVersion": 3.4,
-      "position": [
-        224,
-        1056
-      ],
-      "id": "0a415162-02a8-44e3-a5c1-269632670b60",
+      "position": [-2640, 1408],
+      "id": "2d947fb8-1c04-4b32-bc7c-bd2a446da96a",
       "name": "edit_near"
     },
     {
@@ -390,11 +371,8 @@
       },
       "type": "n8n-nodes-base.set",
       "typeVersion": 3.4,
-      "position": [
-        224,
-        1248
-      ],
-      "id": "02933838-4b16-4fdd-884e-774d6b26a05d",
+      "position": [-2640, 1600],
+      "id": "73a15195-ef1c-441d-8e7e-50cae8ba78e8",
       "name": "edit_next"
     },
     {
@@ -404,11 +382,8 @@
       },
       "type": "n8n-nodes-base.splitOut",
       "typeVersion": 1,
-      "position": [
-        1104,
-        1056
-      ],
-      "id": "5d29c642-4a84-4ec3-ac9a-9278a6460e0a",
+      "position": [-2416, 1312],
+      "id": "3deb7af9-192d-4e17-8a4a-c0304a68b686",
       "name": "Split Out"
     },
     {
@@ -437,11 +412,8 @@
       },
       "type": "n8n-nodes-base.if",
       "typeVersion": 2.3,
-      "position": [
-        0,
-        384
-      ],
-      "id": "b1dbce1a-4120-4b85-bf05-4655a14a28d3",
+      "position": [-2864, 736],
+      "id": "6fa2c801-7fe9-42b2-a00b-3eb572e6fee7",
       "name": "pessoas_afrente=0?"
     },
     {
@@ -460,11 +432,8 @@
       },
       "type": "n8n-nodes-base.set",
       "typeVersion": 3.4,
-      "position": [
-        224,
-        288
-      ],
-      "id": "85da2d50-ca20-4efa-9178-3605dfc89297",
+      "position": [-2640, 640],
+      "id": "99c8e7c7-ed94-4d19-8429-0a0cf1f83ed6",
       "name": "edit_joined_fila_vazia"
     },
     {
@@ -473,11 +442,8 @@
       },
       "type": "n8n-nodes-base.wait",
       "typeVersion": 1.1,
-      "position": [
-        2208,
-        1056
-      ],
-      "id": "e1b4fb29-179c-4019-9b36-5f77cde62bd9",
+      "position": [-1520, 1312],
+      "id": "600a14a9-efe4-42c8-bacf-34db81d3422c",
       "name": "Wait",
       "webhookId": "1873977b-d084-48d2-a0a2-36960d2628da",
       "notes": "tempo aleatório entre 3 e 5 segundos"
@@ -493,11 +459,8 @@
       },
       "type": "n8n-nodes-base.telegram",
       "typeVersion": 1.2,
-      "position": [
-        0,
-        0
-      ],
-      "id": "834a1391-954b-4dab-92d0-6896f0518cd5",
+      "position": [-2864, 544],
+      "id": "9123bf84-ac05-4bac-b88d-3f531ce66251",
       "name": "Telegram",
       "webhookId": "750d64a0-1441-449b-a4a9-cee01c2e930f",
       "disabled": true
@@ -518,11 +481,8 @@
       },
       "type": "n8n-nodes-base.set",
       "typeVersion": 3.4,
-      "position": [
-        224,
-        1632
-      ],
-      "id": "e5587932-e7fb-46b7-832a-d544f7117747",
+      "position": [-2640, 1792],
+      "id": "34f612db-ef10-4a59-993e-f26e01e1885e",
       "name": "edit_lunch_start"
     },
     {
@@ -541,11 +501,8 @@
       },
       "type": "n8n-nodes-base.set",
       "typeVersion": 3.4,
-      "position": [
-        224,
-        1824
-      ],
-      "id": "26c14d18-ed21-4eb3-96d7-9185fdc6a538",
+      "position": [-2640, 1984],
+      "id": "718723b9-8fe8-46de-9975-d2da277f156d",
       "name": "edit_lunch_end"
     },
     {
@@ -564,11 +521,8 @@
       },
       "type": "n8n-nodes-base.set",
       "typeVersion": 3.4,
-      "position": [
-        224,
-        864
-      ],
-      "id": "454c1399-697f-432b-9d57-10ea28b95724",
+      "position": [-2640, 1216],
+      "id": "689a10a8-738f-43ac-a594-bdbc8edb27f5",
       "name": "edit_joined_lunch"
     },
     {
@@ -587,11 +541,8 @@
       },
       "type": "n8n-nodes-base.set",
       "typeVersion": 3.4,
-      "position": [
-        224,
-        672
-      ],
-      "id": "899ee6fd-87de-4609-9dae-6fc3b12870f6",
+      "position": [-2640, 1024],
+      "id": "f4c664b0-e93b-4582-8309-9ca2b85ca296",
       "name": "edit_joined_pre_open"
     },
     {
@@ -606,11 +557,8 @@
       },
       "type": "@devlikeapro/n8n-nodes-waha.WAHA",
       "typeVersion": 202502,
-      "position": [
-        -32,
-        192
-      ],
-      "id": "631ad24c-b731-4120-8ba5-bd78b29fbf35",
+      "position": [-2864, 352],
+      "id": "97cfb15f-8312-42de-8b49-3335f2e825ec",
       "name": "Send a text message",
       "credentials": {
         "wahaApi": {
@@ -629,11 +577,8 @@
       },
       "type": "@devlikeapro/n8n-nodes-waha.WAHA",
       "typeVersion": 202502,
-      "position": [
-        1312,
-        1056
-      ],
-      "id": "5fba1647-5e1a-42c3-950f-c8c1e76f5ace",
+      "position": [-2192, 1312],
+      "id": "2e969fe6-735c-4b9b-8886-ecead091d15a",
       "name": "Check phone number is registered in WhatsApp.1",
       "credentials": {
         "wahaApi": {
@@ -652,11 +597,8 @@
       },
       "type": "@devlikeapro/n8n-nodes-waha.WAHA",
       "typeVersion": 202502,
-      "position": [
-        1952,
-        1056
-      ],
-      "id": "9d557bb6-b988-4d11-b743-e15d0022e6ee",
+      "position": [-1744, 1312],
+      "id": "1e40f8cf-cdfb-4b69-b632-e475f15c3fda",
       "name": "Start Typing1",
       "credentials": {
         "wahaApi": {
@@ -677,11 +619,8 @@
       },
       "type": "@devlikeapro/n8n-nodes-waha.WAHA",
       "typeVersion": 202502,
-      "position": [
-        2416,
-        1056
-      ],
-      "id": "fb9a8d58-79e6-439b-9ea9-ad22484137ae",
+      "position": [-1296, 1312],
+      "id": "dc1d7b3b-40ee-468b-a8ed-64eb715fa09d",
       "name": "Send a text message2",
       "credentials": {
         "wahaApi": {
@@ -691,70 +630,6 @@
       }
     }
   ],
-  "pinData": {
-    "Webhook": [
-      {
-        "json": {
-          "headers": {
-            "host": "n8n.doncabellone.com.br",
-            "user-agent": "Mozilla/5.0 (iPhone; CPU iPhone OS 26_5_2 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) CriOS/150.0.7871.113 Mobile/15E148 Safari/604.1",
-            "content-length": "264",
-            "accept": "application/json",
-            "accept-encoding": "gzip, deflate, br, zstd",
-            "accept-language": "pt-BR,pt;q=0.9",
-            "content-type": "application/json",
-            "origin": "https://www.doncabellone.com.br",
-            "priority": "u=3, i",
-            "referer": "https://www.doncabellone.com.br/",
-            "sec-fetch-dest": "empty",
-            "sec-fetch-mode": "cors",
-            "sec-fetch-site": "same-site",
-            "x-forwarded-for": "10.0.0.2",
-            "x-forwarded-host": "n8n.doncabellone.com.br",
-            "x-forwarded-port": "443",
-            "x-forwarded-proto": "https",
-            "x-forwarded-server": "a5979d1f73b1",
-            "x-real-ip": "10.0.0.2"
-          },
-          "params": {},
-          "query": {},
-          "body": {
-            "type": "QUEUE_UPDATE",
-            "event": "JOINED",
-            "user": {
-              "name": "Lucas Andrade",
-              "phone": "5521969612536"
-            },
-            "queue": {
-              "position": 2,
-              "peopleAhead": 1,
-              "etaMinutes": 8,
-              "estimatedWait": "09:00"
-            },
-            "establishment": {
-              "name": "Don Cabellone"
-            },
-            "trackingUrl": "https://www.doncabellone.com.br/"
-          },
-          "webhookUrl": "https://n8n.doncabellone.com.br/webhook/notificacao",
-          "executionMode": "production"
-        }
-      }
-    ],
-    "Edit Fields1": [
-      {
-        "json": {
-          "nome_usuario": "Victor Freitas",
-          "telefone_usuario": "5521996412433",
-          "posicao_fila": 1,
-          "pessoas_afrente": 0,
-          "estimatedWait": "Agora",
-          "url_acompanhamento": "https://www.doncabellone.com.br/",
-          "evento": "UPDATE"
-        }
-      }
-    ]
-  },
   "connections": {
     "If": {
       "main": [
@@ -1020,15 +895,21 @@
       ]
     }
   },
-  "active": true,
-  "settings": {
-    "executionOrder": "v1",
-    "binaryMode": "separate"
+  "pinData": {
+    "Edit Fields1": [
+      {
+        "nome_usuario": "Victor Freitas",
+        "telefone_usuario": "5521996412433",
+        "posicao_fila": 1,
+        "pessoas_afrente": 0,
+        "estimatedWait": "Agora",
+        "url_acompanhamento": "https://www.doncabellone.com.br/",
+        "evento": "UPDATE"
+      }
+    ]
   },
-  "versionId": "bfce600e-3e5f-4ebf-b440-325f047a504c",
   "meta": {
+    "templateCredsSetupCompleted": true,
     "instanceId": "d4e37845a647a12b6a7a035bf7160e477fe76eaff3797bfeee3c57876702d64d"
-  },
-  "id": "5qCow5CHMBvA6HJA",
-  "tags": []
+  }
 }

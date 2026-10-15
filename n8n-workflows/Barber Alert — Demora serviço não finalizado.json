@@ -1,5 +1,4 @@
 {
-  "name": "Barber Alert — Demora serviço não finalizado",
   "nodes": [
     {
       "parameters": {
@@ -15,10 +14,7 @@
       "name": "Schedule 5min",
       "type": "n8n-nodes-base.scheduleTrigger",
       "typeVersion": 1.2,
-      "position": [
-        736,
-        -176
-      ]
+      "position": [736, -176]
     },
     {
       "parameters": {
@@ -30,10 +26,7 @@
       "name": "Query Overtime Serving",
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 2.5,
-      "position": [
-        960,
-        -176
-      ],
+      "position": [960, -176],
       "credentials": {
         "postgres": {
           "id": "uEJcXBMdzMROjoRJ",
@@ -70,10 +63,7 @@
       "name": "Has Overtime?",
       "type": "n8n-nodes-base.if",
       "typeVersion": 2.2,
-      "position": [
-        1184,
-        -176
-      ]
+      "position": [1184, -176]
     },
     {
       "parameters": {
@@ -93,10 +83,7 @@
       "name": "Build Message",
       "type": "n8n-nodes-base.set",
       "typeVersion": 3.4,
-      "position": [
-        1408,
-        -176
-      ]
+      "position": [1408, -176]
     },
     {
       "parameters": {
@@ -110,10 +97,7 @@
       },
       "type": "@devlikeapro/n8n-nodes-waha.WAHA",
       "typeVersion": 202502,
-      "position": [
-        1632,
-        -176
-      ],
+      "position": [1632, -176],
       "id": "4fdd8182-a55a-4d10-940b-be93b091fb98",
       "name": "Send a text message",
       "credentials": {
@@ -128,16 +112,12 @@
         "content": "#Numero fixo do grupo do wagner de barbearia para envio de notificacoes\n"
       },
       "type": "n8n-nodes-base.stickyNote",
-      "position": [
-        1552,
-        -384
-      ],
+      "position": [1552, -384],
       "typeVersion": 1,
       "id": "51b92edc-036a-4b23-8290-60eb3f73e62a",
       "name": "Sticky Note"
     }
   ],
-  "pinData": {},
   "connections": {
     "Schedule 5min": {
       "main": [
@@ -184,15 +164,8 @@
       ]
     }
   },
-  "active": true,
-  "settings": {
-    "executionOrder": "v1",
-    "binaryMode": "separate"
-  },
-  "versionId": "9e515199-21f6-40b3-9e85-97c1c7964ee8",
+  "pinData": {},
   "meta": {
     "instanceId": "d4e37845a647a12b6a7a035bf7160e477fe76eaff3797bfeee3c57876702d64d"
-  },
-  "id": "zfUwMM6OFR5Bun8C",
-  "tags": []
+  }
 }

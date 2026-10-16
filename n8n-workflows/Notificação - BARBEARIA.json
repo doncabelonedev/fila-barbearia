@@ -342,7 +342,7 @@
             {
               "id": "7299ded4-4775-41bf-86cc-63664e335f11",
               "name": "mensagem",
-              "value": "={{ $('Edit Fields1').item.json.estimatedWait.toLowerCase().trim() === 'agora' ? '✅ Sua vez chegou!' : '⚠️ Sua vez está se aproximando!' }}\n\n{{ $('Edit Fields1').item.json.nome_usuario }},\n\n{{ $('Edit Fields1').item.json.estimatedWait.toLowerCase().trim() === 'agora' ? '🛎️ Venha imediatamente!' : $json.pessoas_afrente > 0 ? `👥 ${$json.pessoas_afrente} pessoa(s) na sua frente` : '🎯 Você é o próximo da fila!' }}\n\n{{ $('Edit Fields1').item.json.estimatedWait.toLowerCase().trim() === 'agora' ? '' : `⏳ Tempo estimado atendimento: ${$('Edit Fields1').item.json.estimatedWait}` }}\n\n{{ $('Edit Fields1').item.json.estimatedWait.toLowerCase().trim() === 'agora' ? '' : '⚠️ *O horário exibido é apenas uma PREVISÃO, podendo sofrer variações para MAIS ou para MENOS.*' }}\n\n{{ $('Edit Fields1').item.json.estimatedWait.toLowerCase().trim() === 'agora' ? '' : '👉 Para não perder sua vez, já venha para a barbearia' }}",
+              "value": "=⚠️ Sua vez está se aproximando!\n\n{{ $('Edit Fields1').item.json.nome_usuario }},\n\n{{ $json.pessoas_afrente > 0 ? `👥 ${$json.pessoas_afrente} pessoa(s) na sua frente` : '🎯 Você é o próximo da fila!' }}\n\n⏳ Tempo estimado atendimento: {{ $('Edit Fields1').item.json.estimatedWait }}\n\n⚠️ *O horário exibido é apenas uma PREVISÃO, podendo sofrer variações para MAIS ou para MENOS.*\n\n👉 Para não perder sua vez, já venha para a barbearia",
               "type": "string"
             }
           ]

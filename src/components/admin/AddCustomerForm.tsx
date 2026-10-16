@@ -7,7 +7,7 @@ import { useQueueCount } from "../../hooks/useQueue";
 import { useShopSettings } from "../../hooks/useShopSettings";
 import { sanitizeNameInput } from "../../lib/nameUtils";
 import { supabase } from "../../lib/supabase";
-import { webhookService } from "../../services/webhookService";
+import { joinedEventFor, webhookService } from "../../services/webhookService";
 import ServiceSelectionDialog, {
   calculatePersonDuration,
 } from "../ServiceSelectionDialog";
@@ -153,24 +153,16 @@ export default function AddCustomerForm({
 
       const currentBaseTime = baseQueueTime == null ? 30 : baseQueueTime;
       if (!cleanPhone.startsWith("manual_")) {
-        webhookService
-          .sendWebhook(
-            isLunchPaused
-              ? "JOINED_IN_LUNCH"
-              : isPreOpening
-                ? "JOINED_IN_PRE_OPENING"
-                : "JOINED",
-            queueEntry,
-            queueCount + 1,
-            queueCount,
-            currentBaseTime,
-            shopName,
-            webhookUrl,
-            trackingUrlBase,
-          )
-          .then((sent) => {
-            if (!sent) console.error(`Webhook JOINED falhou para ${queueEntry.id}`);
-          });
+        webhookService.sendJoinedWebhook(
+          joinedEventFor(isLunchPaused, isPreOpening),
+          queueEntry,
+          queueCount + 1,
+          queueCount,
+          currentBaseTime,
+          shopName,
+          webhookUrl,
+          trackingUrlBase,
+        );
       }
 
       toast.success("Adicionado à fila");

@@ -1,6 +1,12 @@
 import { useEffect, useRef } from "react";
 import { QueueItem, supabase } from "../lib/supabase";
-import { webhookService } from "../services/webhookService";
+import { sendOnce } from "../lib/queueNotificationFlags";
+import {
+  canReceiveMessages,
+  needsJoinedFallback,
+  pickPositionEvent,
+} from "../lib/queueNotificationRules";
+import { WebhookEvent, webhookService } from "../services/webhookService";
 import { calculateEstimatedMinutes } from "./useQueue";
 
 interface Params {
@@ -13,6 +19,11 @@ interface Params {
   isPreOpening: boolean;
   isLunchPaused: boolean;
 }
+
+/** UPDATE so sai se o ETA mudou pelo menos isso desde o ultimo envio... */
+const UPDATE_MIN_ETA_DIFF_MINUTES = 10;
+/** ...e se o ultimo UPDATE foi ha pelo menos isso. */
+const UPDATE_COOLDOWN_MS = 5 * 60 * 1000;
 
 export function useWebhookNotifications({
   isAuthenticated,
@@ -41,118 +52,65 @@ export function useWebhookNotifications({
       processingWebhooksRef.current = true;
       try {
         const servingCount = queue.filter((i) => i.status === "serving").length;
+        // Convidados entram na contagem: ocupam cadeira mesmo sem receber mensagem.
         const waitingItems = queue
-          .filter((i) => i.status === "waiting" && !i.parent_queue_id)
+          .filter((i) => i.status === "waiting")
           .sort((a, b) => a.position - b.position);
         const currentBaseTime = baseQueueTime == null ? 30 : baseQueueTime;
 
         for (let index = 0; index < waitingItems.length; index++) {
           const item = waitingItems[index];
+          if (!canReceiveMessages(item)) continue;
+
           const position = servingCount + index + 1;
-          const peopleAhead = position - 1;
+          const send = (event: WebhookEvent) =>
+            webhookService.sendWebhook(
+              event,
+              item,
+              position,
+              position - 1,
+              currentBaseTime,
+              shopName,
+              webhookUrl,
+              trackingUrlBase,
+            );
+
+          let webhookSent = false;
+
+          if (needsJoinedFallback(item, new Date())) {
+            webhookSent = await sendOnce(item.id, "joined_notified_at", () =>
+              send("JOINED"),
+            );
+          }
+
           const lastPos = notifiedPositionMap.current.get(item.id);
+          notifiedPositionMap.current.set(item.id, position);
 
           if (lastPos === undefined) {
-            notifiedPositionMap.current.set(item.id, position);
             const etaMinutes = await calculateEstimatedMinutes(position);
             await supabase
               .from("queue")
               .update({ last_sent_eta: etaMinutes })
               .eq("id", item.id);
-            continue;
-          }
+          } else {
+            const event = pickPositionEvent(position, lastPos, servingCount);
+            // Quem ja recebeu "sua vez chegou" nao recebe mais NEAR/UPDATE.
+            const alreadyCalled = item.notified_next === true;
 
-          if (lastPos !== position) {
-            const notifiedNext = (item as any).notified_next ?? false;
-            const notifiedNear = (item as any).notified_near ?? false;
-            let webhookSent = false;
-
-            const nextTriggerPosition = servingCount + 1;
-            if (
-              position === nextTriggerPosition &&
-              lastPos > nextTriggerPosition &&
-              !notifiedNext
-            ) {
-              webhookSent = await webhookService.sendWebhook(
-                "NEXT",
-                item,
-                position,
-                peopleAhead,
-                currentBaseTime,
-                shopName,
-                webhookUrl,
-                trackingUrlBase,
+            if (event === "NEXT") {
+              webhookSent = await sendOnce(item.id, "notified_next", () =>
+                send("NEXT"),
               );
-              if (webhookSent) {
-                await supabase
-                  .from("queue")
-                  .update({ notified_next: true })
-                  .eq("id", item.id);
-              }
-            } else if (position <= 3 && lastPos > 3 && !notifiedNear) {
-              webhookSent = await webhookService.sendWebhook(
-                "NEAR",
-                item,
-                position,
-                peopleAhead,
-                currentBaseTime,
-                shopName,
-                webhookUrl,
-                trackingUrlBase,
+            } else if (event === "NEAR" && !alreadyCalled) {
+              webhookSent = await sendOnce(item.id, "notified_near", () =>
+                send("NEAR"),
               );
-              if (webhookSent) {
-                await supabase
-                  .from("queue")
-                  .update({ notified_near: true })
-                  .eq("id", item.id);
-              }
-            } else {
-              try {
-                const etaMinutes = await calculateEstimatedMinutes(position);
-                const prevSentEta = (item as any).last_sent_eta;
-                const prevSentAt = (item as any).last_update_sent_at
-                  ? new Date((item as any).last_update_sent_at)
-                  : null;
-                const now = new Date();
-                const cooldownMs = 5 * 60 * 1000;
-                const etaDiff =
-                  prevSentEta == null
-                    ? Infinity
-                    : Math.abs(etaMinutes - prevSentEta);
-
-                if (
-                  etaDiff >= 10 &&
-                  (prevSentAt == null ||
-                    now.getTime() - prevSentAt.getTime() >= cooldownMs)
-                ) {
-                  webhookSent = await webhookService.sendWebhook(
-                    "UPDATE",
-                    item,
-                    position,
-                    peopleAhead,
-                    currentBaseTime,
-                    shopName,
-                    webhookUrl,
-                    trackingUrlBase,
-                  );
-                  if (webhookSent) {
-                    await supabase
-                      .from("queue")
-                      .update({
-                        last_update_sent_at: now.toISOString(),
-                        last_sent_eta: etaMinutes,
-                      })
-                      .eq("id", item.id);
-                  }
-                }
-              } catch (e) {
-                console.error("Erro ao processar UPDATE:", e);
-              }
+            } else if (event === "UPDATE" && !alreadyCalled) {
+              webhookSent = await sendUpdateIfEtaDrifted(item, position, send);
             }
-
-            notifiedPositionMap.current.set(item.id, position);
-            if (webhookSent) await new Promise((r) => setTimeout(r, 500));
           }
+
+          if (webhookSent) await new Promise((r) => setTimeout(r, 500));
         }
       } finally {
         processingWebhooksRef.current = false;
@@ -162,4 +120,43 @@ export function useWebhookNotifications({
     processWebhooks();
   }, [queue, isAuthenticated, baseQueueTime, shopName, webhookUrl, trackingUrlBase, isPreOpening, isLunchPaused]);
 
+}
+
+/** Envia UPDATE so quando o ETA mudou o bastante e o cooldown ja passou. */
+async function sendUpdateIfEtaDrifted(
+  item: QueueItem,
+  position: number,
+  send: (event: WebhookEvent) => Promise<boolean>,
+): Promise<boolean> {
+  try {
+    const etaMinutes = await calculateEstimatedMinutes(position);
+    const prevSentAt = item.last_update_sent_at
+      ? new Date(item.last_update_sent_at)
+      : null;
+    const now = new Date();
+    const etaDiff =
+      item.last_sent_eta == null
+        ? Infinity
+        : Math.abs(etaMinutes - item.last_sent_eta);
+
+    const cooldownPassed =
+      prevSentAt == null ||
+      now.getTime() - prevSentAt.getTime() >= UPDATE_COOLDOWN_MS;
+    if (etaDiff < UPDATE_MIN_ETA_DIFF_MINUTES || !cooldownPassed) return false;
+
+    const sent = await send("UPDATE");
+    if (sent) {
+      await supabase
+        .from("queue")
+        .update({
+          last_update_sent_at: now.toISOString(),
+          last_sent_eta: etaMinutes,
+        })
+        .eq("id", item.id);
+    }
+    return sent;
+  } catch (e) {
+    console.error("Erro ao processar UPDATE:", e);
+    return false;
+  }
 }

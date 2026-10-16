@@ -31,7 +31,7 @@ import {
 } from "../constants/constants";
 import { useBarberServices } from "../hooks/useBarberServices";
 import { useShopSettings } from "../hooks/useShopSettings";
-import { webhookService } from "../services/webhookService";
+import { joinedEventFor, webhookService } from "../services/webhookService";
 import ServiceSelectionDialog, {
   calculatePersonDuration,
 } from "../components/ServiceSelectionDialog";
@@ -356,24 +356,16 @@ export default function Home() {
       localStorage.setItem("barber_customer_phone", fullPhone);
       localStorage.setItem("barber_customer_name", name);
 
-      webhookService
-        .sendWebhook(
-          isLunchPaused
-            ? "JOINED_IN_LUNCH"
-            : isPreOpening
-              ? "JOINED_IN_PRE_OPENING"
-              : "JOINED",
-          queueEntry,
-          queueCount + 1,
-          queueCount,
-          mainDuration,
-          shopName,
-          webhookUrl,
-          trackingUrlBase,
-        )
-        .then((sent) => {
-          if (!sent) console.error(`Webhook JOINED falhou para ${queueEntry.id}`);
-        });
+      webhookService.sendJoinedWebhook(
+        joinedEventFor(isLunchPaused, isPreOpening),
+        queueEntry,
+        queueCount + 1,
+        queueCount,
+        mainDuration,
+        shopName,
+        webhookUrl,
+        trackingUrlBase,
+      );
 
       toast.success("Entrou na fila com sucesso!");
       navigate("/queue");

@@ -1,0 +1,149 @@
+{
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "minutes"
+            }
+          ]
+        }
+      },
+      "id": "00184c5c-8d83-4dee-b5d1-59803336fe9c",
+      "name": "A cada 5 min",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        2944,
+        -720
+      ],
+      "notesInFlow": true,
+      "notes": "Dispara o ciclo de verificação de atendimento estourado."
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "-- =====================================================================\n-- 1) Configurações da loja (1 linha) + flag \"pode rodar\"\n-- =====================================================================\nWITH cfg AS (\n  SELECT\n    (    COALESCE(manual_status, 'auto') = 'auto'\n     AND NOT COALESCE(is_lunch_paused, false)\n     AND NOT COALESCE(is_pre_opening,  false) )    AS pode_rodar\n  FROM public.shop_settings\n  LIMIT 1\n),\n\n-- =====================================================================\n-- 2) Quem está 'serving' e JÁ passou do service_duration\n--    -> nova duração = tempo decorrido + 10 min (teto 180).\n--    Ancorar em now() garante que sempre sobrem ~10 min de folga.\n--    A condição de atraso está NESTA linha, então cada +10 só volta\n--    a acontecer 10 minutos depois. Sem loop, sem número gigante.\n--    O site e o painel recalculam o horário estimado da fila a partir\n--    dessa duração. Nenhuma mensagem é enviada ao cliente aqui.\n-- =====================================================================\nbump AS (\n  UPDATE public.queue q\n     SET service_duration = LEAST(\n           CEIL(EXTRACT(EPOCH FROM (now() - q.service_start)) / 60)::int + 10,\n           180\n         )\n   WHERE q.status = 'serving'\n     AND q.service_start IS NOT NULL\n     AND q.service_start > now() - interval '8 hours'   -- rede de proteção\n     AND now() - q.service_start > make_interval(mins => COALESCE(q.service_duration, 30))\n     AND (SELECT pode_rodar FROM cfg)\n  RETURNING q.id, q.customer_id, q.service_duration\n)\n\n-- =====================================================================\n-- 3) Quem estourou o tempo, para avisar o barbeiro.\n--    0 linhas = ninguém estourou, o workflow para aqui.\n-- =====================================================================\nSELECT\n  b.id               AS queue_id,\n  c.name             AS customer_name,\n  b.service_duration AS nova_duracao\nFROM bump b\nLEFT JOIN public.customers c ON c.id = b.customer_id",
+        "options": {}
+      },
+      "id": "830fe845-1479-4e1d-a5c8-386dac447a0f",
+      "name": "Recalcula Atendimento Estourado",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.5,
+      "position": [
+        3168,
+        -720
+      ],
+      "alwaysOutputData": false,
+      "notesInFlow": true,
+      "credentials": {
+        "postgres": {
+          "id": "uEJcXBMdzMROjoRJ",
+          "name": "filabarbearia - conta wagner producao"
+        }
+      },
+      "notes": "Config + bump de +10min no atendimento estourado. 0 linhas = nada a fazer."
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "3c204e68-5267-464f-847f-41da5ceea30f",
+              "leftValue": "={{ $json.queue_id }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "notEmpty",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "looseTypeValidation": true,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.filter",
+      "typeVersion": 2.2,
+      "position": [
+        3392,
+        -720
+      ],
+      "id": "b9ead57d-b65e-42f3-b786-801b291813a2",
+      "name": "Atendimento Estourou"
+    },
+    {
+      "parameters": {
+        "resource": "Chatting",
+        "operation": "Send Text",
+        "session": "=default",
+        "chatId": "=120363427622801943@g.us",
+        "text": "=⏰ *Tempo de corte ultrapassado!*\n\nO atendimento atual já passou do tempo estimado.\n\n👤 Cliente: {{ $json.customer_name }}\n\n\n",
+        "linkPreview": false,
+        "requestOptions": {}
+      },
+      "type": "@devlikeapro/n8n-nodes-waha.WAHA",
+      "typeVersion": 202502,
+      "position": [
+        3616,
+        -720
+      ],
+      "id": "8aae984a-8960-4819-b07c-cf97dbce3ef1",
+      "name": "Informa barbeiro",
+      "credentials": {
+        "wahaApi": {
+          "id": "SnPbBDMOKqjxdZQo",
+          "name": "WAHA - doncabellone"
+        }
+      }
+    }
+  ],
+  "connections": {
+    "A cada 5 min": {
+      "main": [
+        [
+          {
+            "node": "Recalcula Atendimento Estourado",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Recalcula Atendimento Estourado": {
+      "main": [
+        [
+          {
+            "node": "Atendimento Estourou",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Atendimento Estourou": {
+      "main": [
+        [
+          {
+            "node": "Informa barbeiro",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "pinData": {},
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "d4e37845a647a12b6a7a035bf7160e477fe76eaff3797bfeee3c57876702d64d"
+  }
+}

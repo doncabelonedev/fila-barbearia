@@ -8,10 +8,13 @@ Fila digital para uma barbearia com apenas 1 barbeiro.
 - Posicao do cliente = contagem de linhas ativas (waiting + serving), nunca a coluna `position` crua.
 - A coluna `position` pode ter buracos. Quem renumera para 1..N é a aplicacao, em `src/lib/queuePositions.ts`, depois de TODA mudanca de status.
 - Pessoas na frente = posicao - 1. Inclui quem esta em atendimento.
-- Convidado/manual (`is_manual = true` ou telefone `manual_%`) ocupa cadeira: conta na posicao e no ETA (horario estimado de atendimento), mas nao recebe mensagem.
+- Convidado (`parent_queue_id`) e cliente sem telefone (telefone `manual_%`) ocupam cadeira: contam na posicao e no ETA (horario estimado de atendimento), mas nao recebem mensagem. Regra em `src/lib/queueNotificationRules.ts`.
 - ETA sempre arredondado para o multiplo de 5 min mais proximo. Site e n8n usam a mesma regra, senao divergem.
 - Notificacao de mudanca de posicao sai no ENCERRAMENTO do atendimento. Iniciar com a cadeira vazia nao move ninguem. So dispara com o painel do barbeiro aberto.
-- Aviso de atraso é 100% n8n (roda a cada 5 min), independe do painel. Cooldown de 10 min por cliente, sem limite de posicao.
+- Nao existe mais aviso de atraso para o cliente. O n8n (a cada 5 min) so recalcula o atendimento estourado e avisa o barbeiro.
+- "Sua vez chegou" sai uma unica vez por cliente, pelo evento NEXT. Depois dele o cliente nao recebe mais NEAR/UPDATE.
+- Toda mensagem de envio unico (NEXT, NEAR, entrada) e marcada no banco ANTES de enviar (`src/lib/queueNotificationFlags.ts`), para dois paineis abertos nao enviarem em dobro.
+- Mensagem de entrada (JOINED) sai do site do cliente e grava `joined_notified_at`. Se ficar vazia por mais de 1 min, o painel do barbeiro reenvia.
 - Atendimento estourado: a duracao vira "tempo decorrido + 10 min" (teto 180) a cada ciclo do n8n.
 
 # Locais de hospedagem

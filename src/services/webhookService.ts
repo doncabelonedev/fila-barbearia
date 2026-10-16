@@ -1,7 +1,17 @@
-import { QueueItem } from "../lib/supabase";
+import { markNotified } from "../lib/queueNotificationFlags";
 import { calculateEstimatedMinutes, calculateEstimatedServiceTimeDynamic } from "../hooks/useQueue";
 
 export type WebhookEvent = "JOINED" | "JOINED_IN_LUNCH" | "JOINED_IN_PRE_OPENING" | "NEAR" | "NEXT" | "UPDATE" | "DELAYED" | "LUNCH_START" | "LUNCH_END";
+
+/** Evento de entrada na fila conforme o estado da barbearia no momento. */
+export function joinedEventFor(
+  isLunchPaused: boolean,
+  isPreOpening: boolean,
+): WebhookEvent {
+  if (isLunchPaused) return "JOINED_IN_LUNCH";
+  if (isPreOpening) return "JOINED_IN_PRE_OPENING";
+  return "JOINED";
+}
 
 export interface CampaignWebhookPayload {
   titulo_campanha: string;
@@ -240,8 +250,10 @@ class WebhookService {
       }
 
       try {
+        // keepalive: o envio termina mesmo se o cliente fechar a aba logo depois.
         const response = await fetch(finalWebhookUrl, {
           method: "POST",
+          keepalive: true,
           headers: {
             "Content-Type": "application/json",
             Accept: "application/json",
@@ -291,6 +303,36 @@ class WebhookService {
       );
       return false;
     }
+  }
+
+  /**
+   * Mensagem de entrada na fila. Marca `joined_notified_at` quando o envio da
+   * certo; se nao for marcada, o painel do barbeiro reenvia (ver
+   * needsJoinedFallback).
+   */
+  public async sendJoinedWebhook(
+    event: WebhookEvent,
+    item: any,
+    position: number,
+    peopleAhead: number,
+    baseTime: number,
+    shopName: string,
+    webhookUrl: string | null,
+    trackingUrlBase: string | null,
+  ): Promise<boolean> {
+    const sent = await this.sendWebhook(
+      event,
+      item,
+      position,
+      peopleAhead,
+      baseTime,
+      shopName,
+      webhookUrl,
+      trackingUrlBase,
+    );
+    if (sent) await markNotified(item.id, "joined_notified_at");
+    else console.error(`Webhook ${event} falhou para ${item.id}`);
+    return sent;
   }
 }
 

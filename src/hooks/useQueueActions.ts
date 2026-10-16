@@ -10,6 +10,18 @@ interface Params {
   fetchQueue: () => Promise<void>;
 }
 
+/**
+ * Libera os avisos NEXT/NEAR de quem esta esperando, para a nova ordem da fila.
+ * Roda ANTES de mudar o status: o painel marca a flag no instante em que ve a
+ * mudanca, e zerar depois apagaria essa marca (permitindo envio em dobro).
+ */
+async function resetPositionNotificationFlags(): Promise<void> {
+  await supabase
+    .from("queue")
+    .update({ notified_next: false, notified_near: false })
+    .eq("status", "waiting");
+}
+
 export function useQueueActions({
   queue,
   isLunchPaused,
@@ -31,6 +43,7 @@ export function useQueueActions({
     if (processingId) return;
     setProcessingId(item.id);
     try {
+      await resetPositionNotificationFlags();
       const servingItem = queue.find((i) => i.status === "serving");
       if (servingItem) {
         const endTime = new Date();
@@ -50,10 +63,6 @@ export function useQueueActions({
         .from("queue")
         .update({ status: "serving", service_start: new Date().toISOString() })
         .eq("id", item.id);
-      await supabase
-        .from("queue")
-        .update({ notified_next: false, notified_near: false })
-        .eq("status", "waiting");
       toast.success(`Iniciou atendimento para ${item.customer?.name}`);
       await normalizeQueuePositions();
       await fetchQueue();
@@ -68,6 +77,7 @@ export function useQueueActions({
     if (processingId) return;
     setProcessingId(item.id);
     try {
+      await resetPositionNotificationFlags();
       const endTime = new Date();
       const startTime = new Date(item.service_start!);
       const duration = Math.round(
@@ -82,10 +92,6 @@ export function useQueueActions({
         { customer_id: item.customer_id, duration_minutes: duration },
       ]);
       toast.success(`Atendimento de ${item.customer?.name} finalizado!`);
-      await supabase
-        .from("queue")
-        .update({ notified_next: false, notified_near: false })
-        .eq("status", "waiting");
       await normalizeQueuePositions();
       await fetchQueue();
     } catch {
